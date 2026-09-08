@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
 import { Transaction } from '../types';
 
 const mapTransactionFromDB = (row: any): Transaction => ({
@@ -18,18 +17,17 @@ const mapTransactionFromDB = (row: any): Transaction => ({
   updatedAt: row.updated_at
 });
 
-export const useBudgetData = () => {
-  const { user } = useAuth();
+export const useBudgetData = (ownerId: string | null, canEdit: boolean) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-    if (!user) return;
+    if (!ownerId) return;
     try {
       const { data } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', ownerId)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -44,7 +42,7 @@ export const useBudgetData = () => {
   };
 
   useEffect(() => {
-    if (!user) {
+    if (!ownerId) {
       setTransactions([]);
       setLoading(false);
       return;
@@ -53,10 +51,10 @@ export const useBudgetData = () => {
     fetchData();
 
     const channel = supabase
-      .channel('schema-db-changes')
+      .channel(`transactions-${ownerId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` },
+        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${ownerId}` },
         () => { fetchData(); }
       )
       .subscribe();
@@ -64,10 +62,11 @@ export const useBudgetData = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownerId]);
 
   const addTransaction = async (data: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'checked'>) => {
-    if (!user) return;
+    if (!ownerId || !canEdit) return;
 
     const tempId = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -75,7 +74,7 @@ export const useBudgetData = () => {
       ...data,
       id: tempId,
       checked: false,
-      userId: user.id,
+      userId: ownerId,
       createdAt: now,
       updatedAt: now
     };
@@ -94,29 +93,29 @@ export const useBudgetData = () => {
       checked: false,
       recurring: data.recurring,
       note: data.note,
-      user_id: user.id
+      user_id: ownerId
     });
   };
 
   const deleteTransaction = async (id: string) => {
-    if (!user) return;
+    if (!ownerId || !canEdit) return;
     setTransactions(prev => prev.filter(t => t.id !== id));
-    await supabase.from('transactions').delete().eq('id', id).eq('user_id', user.id);
+    await supabase.from('transactions').delete().eq('id', id).eq('user_id', ownerId);
   };
 
   const toggleChecked = async (id: string) => {
-    if (!user) return;
+    if (!ownerId || !canEdit) return;
     const tx = transactions.find(t => t.id === id);
     if (!tx) return;
     const newChecked = !tx.checked;
     setTransactions(prev => prev.map(t => t.id === id ? { ...t, checked: newChecked } : t));
-    await supabase.from('transactions').update({ checked: newChecked }).eq('id', id).eq('user_id', user.id);
+    await supabase.from('transactions').update({ checked: newChecked }).eq('id', id).eq('user_id', ownerId);
   };
 
   const updateTransaction = async (id: string, updates: Partial<Pick<Transaction, 'name' | 'category' | 'amount' | 'recurring'>>) => {
-    if (!user) return;
+    if (!ownerId || !canEdit) return;
     setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-    await supabase.from('transactions').update(updates).eq('id', id).eq('user_id', user.id);
+    await supabase.from('transactions').update(updates).eq('id', id).eq('user_id', ownerId);
   };
 
   return {

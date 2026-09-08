@@ -28,6 +28,7 @@ interface Props {
   onDelete: (id: string) => void;
   onToggleChecked: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Pick<Transaction, 'name' | 'category' | 'amount' | 'recurring'>>) => void;
+  canEdit: boolean;
 }
 
 const itemKey = (name: string, category: string) => `${name.trim().toLowerCase()}|${category.trim().toLowerCase()}`;
@@ -35,7 +36,7 @@ const itemKey = (name: string, category: string) => `${name.trim().toLowerCase()
 const toDateStr = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-export default function MonthlyChecklist({ transactions, onAdd, onDelete, onToggleChecked, onUpdate }: Props) {
+export default function MonthlyChecklist({ transactions, onAdd, onDelete, onToggleChecked, onUpdate, canEdit }: Props) {
   const now = new Date();
   const [activeMonth, setActiveMonth] = useState(now.getMonth());
   const [activeYear, setActiveYear] = useState(now.getFullYear());
@@ -82,6 +83,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   // Auto-copy recurring items into the active month if they aren't there yet.
   const seededMonths = useRef(new Set<string>());
   useEffect(() => {
+    if (!canEdit) return;
     const monthKey = `${activeYear}-${activeMonth}`;
     if (seededMonths.current.has(monthKey)) return;
 
@@ -287,23 +289,30 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                   className={`flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm ${t.checked ? 'opacity-60' : ''}`}
                 >
                   <button
-                    onClick={() => onToggleChecked(t.id)}
+                    onClick={() => canEdit && onToggleChecked(t.id)}
+                    disabled={!canEdit}
                     aria-label={t.checked ? 'Mark as unpaid' : 'Mark as paid'}
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
                       t.checked ? 'border-slate-900 bg-slate-900' : 'border-slate-200 bg-white'
-                    }`}
+                    } ${!canEdit ? 'cursor-default' : ''}`}
                   >
                     {t.checked && <Check className="h-3.5 w-3.5 text-white" />}
                   </button>
 
                   <div className="min-w-0 flex-1">
-                    <input
-                      defaultValue={t.name}
-                      onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
-                      className={`w-full border-none bg-transparent p-0 text-sm font-medium outline-none ${
-                        t.checked ? 'text-slate-400 line-through' : 'text-slate-800'
-                      }`}
-                    />
+                    {canEdit ? (
+                      <input
+                        defaultValue={t.name}
+                        onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
+                        className={`w-full border-none bg-transparent p-0 text-sm font-medium outline-none ${
+                          t.checked ? 'text-slate-400 line-through' : 'text-slate-800'
+                        }`}
+                      />
+                    ) : (
+                      <p className={`truncate text-sm font-medium ${t.checked ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                        {t.name}
+                      </p>
+                    )}
                     <div className="mt-1 flex items-center gap-1.5">
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${c.chip}`}>
                         {t.category}
@@ -312,30 +321,38 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                     </div>
                   </div>
 
-                  <input
-                    type="number"
-                    step="0.01"
-                    defaultValue={t.amount}
-                    onBlur={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })}
-                    className="w-16 shrink-0 border-none bg-transparent text-right text-sm font-semibold text-slate-800 outline-none"
-                  />
+                  {canEdit ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      defaultValue={t.amount}
+                      onBlur={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })}
+                      className="w-16 shrink-0 border-none bg-transparent text-right text-sm font-semibold text-slate-800 outline-none"
+                    />
+                  ) : (
+                    <span className="shrink-0 text-sm font-semibold text-slate-800">{t.amount}</span>
+                  )}
 
-                  <button
-                    onClick={() => onUpdate(t.id, { recurring: !t.recurring })}
-                    aria-label={t.recurring ? 'Stop repeating monthly' : 'Repeat every month'}
-                    title={t.recurring ? 'Repeats every month' : 'Repeat every month'}
-                    className={`shrink-0 rounded-full p-1.5 ${t.recurring ? 'text-indigo-500' : 'text-slate-300 hover:text-slate-500'}`}
-                  >
-                    <Repeat className="h-3.5 w-3.5" />
-                  </button>
+                  {canEdit && (
+                    <>
+                      <button
+                        onClick={() => onUpdate(t.id, { recurring: !t.recurring })}
+                        aria-label={t.recurring ? 'Stop repeating monthly' : 'Repeat every month'}
+                        title={t.recurring ? 'Repeats every month' : 'Repeat every month'}
+                        className={`shrink-0 rounded-full p-1.5 ${t.recurring ? 'text-indigo-500' : 'text-slate-300 hover:text-slate-500'}`}
+                      >
+                        <Repeat className="h-3.5 w-3.5" />
+                      </button>
 
-                  <button
-                    onClick={() => onDelete(t.id)}
-                    aria-label="Delete item"
-                    className="shrink-0 rounded-full p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                      <button
+                        onClick={() => onDelete(t.id)}
+                        aria-label="Delete item"
+                        className="shrink-0 rounded-full p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               );
             })
@@ -348,16 +365,18 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       )}
 
       {/* Floating add button */}
-      <button
-        onClick={() => setShowAddModal(true)}
-        aria-label="Add expense"
-        className="fixed bottom-6 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
+      {canEdit && (
+        <button
+          onClick={() => setShowAddModal(true)}
+          aria-label="Add expense"
+          className="fixed bottom-6 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
 
       {/* Add item bottom sheet */}
-      {showAddModal && (
+      {canEdit && showAddModal && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center" onClick={() => setShowAddModal(false)}>
           <div
             className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl"

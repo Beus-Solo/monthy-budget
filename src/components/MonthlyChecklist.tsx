@@ -23,6 +23,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const now = new Date();
   const [activeMonth, setActiveMonth] = useState(now.getMonth());
   const [activeYear, setActiveYear] = useState(now.getFullYear());
+  const [activeTab, setActiveTab] = useState<'checklist' | 'category'>('checklist');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
@@ -42,6 +43,15 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const monthTotal = monthTransactions
     .filter(t => t.checked)
     .reduce((sum, t) => sum + t.amount, 0);
+
+  const categoryTotals = useMemo(() => {
+    const map = new Map<string, number>();
+    monthTransactions.filter(t => t.checked).forEach(t => {
+      const cat = t.category.trim() || 'Uncategorized';
+      map.set(cat, (map.get(cat) ?? 0) + t.amount);
+    });
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [monthTransactions]);
 
   const fmt = (n: number) => `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -154,6 +164,55 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </span>
       </div>
 
+      {/* View tabs */}
+      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 text-sm font-medium">
+        <button
+          onClick={() => setActiveTab('checklist')}
+          className={`flex-1 rounded-md py-1.5 transition-colors ${
+            activeTab === 'checklist' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Checklist
+        </button>
+        <button
+          onClick={() => setActiveTab('category')}
+          className={`flex-1 rounded-md py-1.5 transition-colors ${
+            activeTab === 'category' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          By Category
+        </button>
+      </div>
+
+      {activeTab === 'category' ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          {categoryTotals.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-slate-400">
+              No paid items yet this month. Check items off to see the breakdown.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {categoryTotals.map(([cat, amt]) => {
+                const pct = monthTotal > 0 ? (amt / monthTotal) * 100 : 0;
+                return (
+                  <div key={cat}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="font-medium text-slate-700">{cat}</span>
+                      <span className="font-semibold text-slate-800">{fmt(amt)}</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-indigo-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         {/* Checklist */}
         <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
@@ -276,6 +335,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

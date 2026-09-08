@@ -2,14 +2,12 @@ import { Wallet } from 'lucide-react';
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-5xl items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 shadow-lg shadow-indigo-200 text-white">
-            <Wallet className="h-5 w-5" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-slate-800">Budget</span>
+    <header className="px-4 pt-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-3xl items-center gap-2.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
+          <Wallet className="h-4.5 w-4.5" />
         </div>
+        <span className="text-lg font-semibold tracking-tight text-slate-900">Budget</span>
       </div>
     </header>
   );

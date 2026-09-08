@@ -1,8 +1,24 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight, X, Wallet2, ListChecks } from 'lucide-react';
 import { Transaction } from '../types';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const CATEGORY_COLORS = [
+  { dot: 'bg-emerald-400', bar: 'bg-emerald-400', chip: 'bg-emerald-50 text-emerald-700' },
+  { dot: 'bg-indigo-400', bar: 'bg-indigo-400', chip: 'bg-indigo-50 text-indigo-700' },
+  { dot: 'bg-orange-400', bar: 'bg-orange-400', chip: 'bg-orange-50 text-orange-700' },
+  { dot: 'bg-rose-400', bar: 'bg-rose-400', chip: 'bg-rose-50 text-rose-700' },
+  { dot: 'bg-sky-400', bar: 'bg-sky-400', chip: 'bg-sky-50 text-sky-700' },
+  { dot: 'bg-amber-400', bar: 'bg-amber-400', chip: 'bg-amber-50 text-amber-700' },
+  { dot: 'bg-fuchsia-400', bar: 'bg-fuchsia-400', chip: 'bg-fuchsia-50 text-fuchsia-700' },
+];
+
+const colorFor = (category: string) => {
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) hash = (hash * 31 + category.charCodeAt(i)) >>> 0;
+  return CATEGORY_COLORS[hash % CATEGORY_COLORS.length];
+};
 
 type NewTransaction = Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'checked'>;
 
@@ -24,6 +40,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const [activeMonth, setActiveMonth] = useState(now.getMonth());
   const [activeYear, setActiveYear] = useState(now.getFullYear());
   const [activeTab, setActiveTab] = useState<'checklist' | 'category'>('checklist');
+  const [showAddModal, setShowAddModal] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
@@ -40,9 +57,16 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
     });
   }, [transactions, activeMonth, activeYear]);
 
-  const monthTotal = monthTransactions
+  const paidTotal = monthTransactions
     .filter(t => t.checked)
     .reduce((sum, t) => sum + t.amount, 0);
+
+  const unpaidTotal = monthTransactions
+    .filter(t => !t.checked)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const unpaidCount = monthTransactions.filter(t => !t.checked).length;
+  const recurringCount = monthTransactions.filter(t => t.recurring).length;
 
   const categoryTotals = useMemo(() => {
     const map = new Map<string, number>();
@@ -112,19 +136,20 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
     setCategory('');
     setAmount('');
     setRecurring(false);
+    setShowAddModal(false);
   };
 
   const goToPrevYear = () => setActiveYear(y => y - 1);
   const goToNextYear = () => setActiveYear(y => y + 1);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 pb-24">
       {/* Year switcher */}
       <div className="flex items-center justify-center gap-3">
         <button
           onClick={goToPrevYear}
           aria-label="Previous year"
-          className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="rounded-full p-1.5 text-slate-400 hover:bg-white hover:text-slate-700"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -132,22 +157,22 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         <button
           onClick={goToNextYear}
           aria-label="Next year"
-          className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="rounded-full p-1.5 text-slate-400 hover:bg-white hover:text-slate-700"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Month tabs */}
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-200 pb-px">
+      {/* Month pills */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
         {MONTHS.map((m, i) => (
           <button
             key={m}
             onClick={() => setActiveMonth(i)}
-            className={`whitespace-nowrap px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
               i === activeMonth
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'bg-white/70 text-slate-500 hover:bg-white'
             }`}
           >
             {m.slice(0, 3)}
@@ -155,29 +180,62 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         ))}
       </div>
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <h3 className="text-sm font-semibold text-slate-800">
-          {MONTHS[activeMonth]} {activeYear} — {monthTransactions.length} item{monthTransactions.length !== 1 ? 's' : ''}
-        </h3>
-        <span className="text-sm font-semibold text-slate-800">
-          Total: {fmt(monthTotal)}
-        </span>
+      {/* Gradient summary card */}
+      <div className="rounded-3xl bg-gradient-to-br from-emerald-200 via-teal-100 to-emerald-50 p-5 shadow-sm">
+        <div className="flex items-center gap-2 text-slate-700">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/60">
+            <Wallet2 className="h-4 w-4" />
+          </div>
+          <span className="text-sm font-medium">{MONTHS[activeMonth]} {activeYear}</span>
+        </div>
+        <p className="mt-4 text-4xl font-bold tracking-tight text-slate-900">{fmt(paidTotal)}</p>
+        <p className="mt-1 text-xs font-medium text-slate-500">PAID SO FAR</p>
+
+        <div className="mt-5 flex items-center gap-6 border-t border-white/50 pt-4">
+          <div>
+            <p className="text-xs text-slate-500">Unpaid</p>
+            <p className="text-sm font-semibold text-slate-800">{fmt(unpaidTotal)}</p>
+          </div>
+          <div className="h-8 w-px bg-white/60" />
+          <div>
+            <p className="text-xs text-slate-500">Items</p>
+            <p className="text-sm font-semibold text-slate-800">{monthTransactions.length}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat tiles */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-gradient-to-br from-orange-100 to-amber-50 p-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/60">
+            <ListChecks className="h-4 w-4 text-slate-700" />
+          </div>
+          <p className="mt-3 text-xl font-bold text-slate-900">{unpaidCount}</p>
+          <p className="text-xs text-slate-500">Unpaid item{unpaidCount !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-50 p-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/60">
+            <Repeat className="h-4 w-4 text-slate-700" />
+          </div>
+          <p className="mt-3 text-xl font-bold text-slate-900">{recurringCount}</p>
+          <p className="text-xs text-slate-500">Recurring</p>
+        </div>
       </div>
 
       {/* View tabs */}
-      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 text-sm font-medium">
+      <div className="flex gap-1 rounded-full bg-white/70 p-1 text-sm font-medium">
         <button
           onClick={() => setActiveTab('checklist')}
-          className={`flex-1 rounded-md py-1.5 transition-colors ${
-            activeTab === 'checklist' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`flex-1 rounded-full py-1.5 transition-colors ${
+            activeTab === 'checklist' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           Checklist
         </button>
         <button
           onClick={() => setActiveTab('category')}
-          className={`flex-1 rounded-md py-1.5 transition-colors ${
-            activeTab === 'category' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`flex-1 rounded-full py-1.5 transition-colors ${
+            activeTab === 'category' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           By Category
@@ -185,26 +243,28 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       </div>
 
       {activeTab === 'category' ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="rounded-3xl bg-white p-5 shadow-sm">
+          <h4 className="mb-4 text-sm font-semibold text-slate-800">Spending by category</h4>
           {categoryTotals.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-slate-400">
               No paid items yet this month. Check items off to see the breakdown.
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {categoryTotals.map(([cat, amt]) => {
-                const pct = monthTotal > 0 ? (amt / monthTotal) * 100 : 0;
+                const pct = paidTotal > 0 ? (amt / paidTotal) * 100 : 0;
+                const c = colorFor(cat);
                 return (
                   <div key={cat}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="font-medium text-slate-700">{cat}</span>
+                    <div className="mb-1.5 flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 font-medium text-slate-700">
+                        <span className={`h-2 w-2 rounded-full ${c.dot}`} />
+                        {cat}
+                      </span>
                       <span className="font-semibold text-slate-800">{fmt(amt)}</span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-indigo-500"
-                        style={{ width: `${pct}%` }}
-                      />
+                      <div className={`h-full rounded-full ${c.bar}`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -213,62 +273,58 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           )}
         </div>
       ) : (
-      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-        {/* Checklist */}
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        <div className="space-y-2.5">
           {monthTransactions.length === 0 ? (
-            <div className="px-4 py-10 text-center text-sm text-slate-400">
-              No items yet. Add one using the form.
+            <div className="rounded-3xl bg-white px-4 py-12 text-center text-sm text-slate-400 shadow-sm">
+              No items yet. Tap + to add one.
             </div>
           ) : (
-            <div>
-              {monthTransactions.map(t => (
+            monthTransactions.map(t => {
+              const c = colorFor(t.category);
+              return (
                 <div
                   key={t.id}
-                  className={`flex items-center gap-3 border-b border-slate-100 px-4 py-2.5 last:border-b-0 hover:bg-slate-50 ${
-                    t.checked ? 'opacity-60' : ''
-                  }`}
+                  className={`flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm ${t.checked ? 'opacity-60' : ''}`}
                 >
                   <button
                     onClick={() => onToggleChecked(t.id)}
                     aria-label={t.checked ? 'Mark as unpaid' : 'Mark as paid'}
-                    className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border-[1.5px] ${
-                      t.checked ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+                      t.checked ? 'border-slate-900 bg-slate-900' : 'border-slate-200 bg-white'
                     }`}
                   >
-                    {t.checked && <Check className="h-3 w-3 text-white" />}
+                    {t.checked && <Check className="h-3.5 w-3.5 text-white" />}
                   </button>
 
-                  <input
-                    defaultValue={t.name}
-                    onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
-                    className={`min-w-0 flex-1 border-none bg-transparent text-sm outline-none ${
-                      t.checked ? 'text-slate-400 line-through' : 'text-slate-800'
-                    }`}
-                  />
-
-                  <input
-                    defaultValue={t.category}
-                    onBlur={(e) => onUpdate(t.id, { category: e.target.value })}
-                    list="category-suggestions"
-                    className="w-24 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600 outline-none focus:border-indigo-400"
-                  />
+                  <div className="min-w-0 flex-1">
+                    <input
+                      defaultValue={t.name}
+                      onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
+                      className={`w-full border-none bg-transparent p-0 text-sm font-medium outline-none ${
+                        t.checked ? 'text-slate-400 line-through' : 'text-slate-800'
+                      }`}
+                    />
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${c.chip}`}>
+                        {t.category}
+                      </span>
+                      {t.recurring && <Repeat className="h-3 w-3 text-slate-400" />}
+                    </div>
+                  </div>
 
                   <input
                     type="number"
                     step="0.01"
                     defaultValue={t.amount}
                     onBlur={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })}
-                    className="w-20 border-none bg-transparent text-right text-sm font-medium text-slate-800 outline-none"
+                    className="w-16 shrink-0 border-none bg-transparent text-right text-sm font-semibold text-slate-800 outline-none"
                   />
 
                   <button
                     onClick={() => onUpdate(t.id, { recurring: !t.recurring })}
                     aria-label={t.recurring ? 'Stop repeating monthly' : 'Repeat every month'}
                     title={t.recurring ? 'Repeats every month' : 'Repeat every month'}
-                    className={`shrink-0 rounded p-1 ${
-                      t.recurring ? 'text-indigo-600' : 'text-slate-300 hover:text-slate-500'
-                    }`}
+                    className={`shrink-0 rounded-full p-1.5 ${t.recurring ? 'text-indigo-500' : 'text-slate-300 hover:text-slate-500'}`}
                   >
                     <Repeat className="h-3.5 w-3.5" />
                   </button>
@@ -276,37 +332,57 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                   <button
                     onClick={() => onDelete(t.id)}
                     aria-label="Delete item"
-                    className="shrink-0 rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    className="shrink-0 rounded-full p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              ))}
-            </div>
+              );
+            })
           )}
 
           <datalist id="category-suggestions">
             {knownCategories.map(c => <option key={c} value={c} />)}
           </datalist>
         </div>
+      )}
 
-        {/* Add item panel */}
-        <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h4 className="mb-3 text-sm font-semibold text-slate-800">Add item</h4>
-            <div className="space-y-2">
+      {/* Floating add button */}
+      <button
+        onClick={() => setShowAddModal(true)}
+        aria-label="Add expense"
+        className="fixed bottom-6 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
+
+      {/* Add item bottom sheet */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center" onClick={() => setShowAddModal(false)}>
+          <div
+            className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h4 className="text-base font-semibold text-slate-900">Add expense</h4>
+              <button onClick={() => setShowAddModal(false)} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-2.5">
               <input
                 placeholder="Item name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
+                autoFocus
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
               />
               <input
                 placeholder="Category (type your own)"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 list="category-suggestions"
-                className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
               />
               <input
                 type="number"
@@ -314,27 +390,26 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
               />
-              <label className="flex items-center gap-2 px-0.5 text-xs text-slate-600">
+              <label className="flex items-center gap-2 px-0.5 py-1 text-xs text-slate-600">
                 <input
                   type="checkbox"
                   checked={recurring}
                   onChange={(e) => setRecurring(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400"
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
                 />
                 Repeat every month
               </label>
               <button
                 onClick={handleAdd}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-3 text-sm font-medium text-white hover:bg-slate-800"
               >
                 <Plus className="h-3.5 w-3.5" /> Add to list
               </button>
             </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );

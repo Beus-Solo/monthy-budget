@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { Transaction, BudgetConfig } from '../types';
+import { Transaction } from '../types';
 
 const mapTransactionFromDB = (row: any): Transaction => ({
   id: row.id,
@@ -20,46 +20,20 @@ const mapTransactionFromDB = (row: any): Transaction => ({
 export const useBudgetData = () => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [budgetConfig, setBudgetConfig] = useState<BudgetConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     if (!user) return;
     try {
-      const [txRes, configRes] = await Promise.all([
-        supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('date', { ascending: false })
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('budget_configs')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle()
-      ]);
+      const { data } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
 
-      if (txRes.data) {
-        setTransactions(txRes.data.map(mapTransactionFromDB));
-      }
-
-      if (configRes.data) {
-        setBudgetConfig({
-          id: configRes.data.id,
-          startingBalance: configRes.data.starting_balance,
-          userId: configRes.data.user_id,
-          createdAt: configRes.data.created_at,
-          updatedAt: configRes.data.updated_at
-        });
-      } else {
-        setBudgetConfig({
-          id: user.id,
-          startingBalance: 0,
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+      if (data) {
+        setTransactions(data.map(mapTransactionFromDB));
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -71,7 +45,6 @@ export const useBudgetData = () => {
   useEffect(() => {
     if (!user) {
       setTransactions([]);
-      setBudgetConfig(null);
       setLoading(false);
       return;
     }
@@ -83,11 +56,6 @@ export const useBudgetData = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` },
-        () => { fetchData(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'budget_configs', filter: `user_id=eq.${user.id}` },
         () => { fetchData(); }
       )
       .subscribe();
@@ -149,31 +117,12 @@ export const useBudgetData = () => {
     await supabase.from('transactions').update(updates).eq('id', id).eq('user_id', user.id);
   };
 
-  const updateStartingBalance = async (balance: number) => {
-    if (!user) return;
-
-    setBudgetConfig(prev => prev ? { ...prev, startingBalance: balance } : null);
-
-    const { data } = await supabase.from('budget_configs').select('id').eq('user_id', user.id).maybeSingle();
-
-    if (data) {
-      await supabase.from('budget_configs').update({ starting_balance: balance }).eq('user_id', user.id);
-    } else {
-      await supabase.from('budget_configs').insert({
-        starting_balance: balance,
-        user_id: user.id
-      });
-    }
-  };
-
   return {
     transactions,
-    budgetConfig,
     loading,
     addTransaction,
     deleteTransaction,
     toggleChecked,
-    updateTransaction,
-    updateStartingBalance
+    updateTransaction
   };
 };

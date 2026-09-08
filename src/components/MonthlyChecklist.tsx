@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Trash2, Plus, Check } from 'lucide-react';
-import { Transaction, TransactionType } from '../types';
+import { Transaction } from '../types';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -16,7 +16,6 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const now = new Date();
   const [activeMonth, setActiveMonth] = useState(now.getMonth());
   const [activeYear] = useState(now.getFullYear());
-  const [type, setType] = useState<TransactionType>('expense');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
@@ -32,17 +31,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
     });
   }, [transactions, activeMonth, activeYear]);
 
-  const checkedTotal = monthTransactions
-    .filter(t => t.checked)
-    .reduce((sum, t) => sum + (t.type === 'expense' ? t.amount : -t.amount), 0);
-
-  const categoryTotals = useMemo(() => {
-    const map: Record<string, number> = {};
-    monthTransactions.filter(t => t.checked).forEach(t => {
-      map[t.category] = (map[t.category] || 0) + t.amount;
-    });
-    return Object.entries(map);
-  }, [monthTransactions]);
+  const monthTotal = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
 
   const fmt = (n: number) => `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -55,7 +44,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       date,
       category: category.trim() || 'Uncategorized',
       name: name.trim(),
-      type,
+      type: 'expense',
       note: ''
     });
     setName('');
@@ -82,15 +71,18 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         ))}
       </div>
 
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <h3 className="text-sm font-semibold text-slate-800">
+          {MONTHS[activeMonth]} {activeYear} — {monthTransactions.length} item{monthTransactions.length !== 1 ? 's' : ''}
+        </h3>
+        <span className="text-sm font-semibold text-slate-800">
+          Total: {fmt(monthTotal)}
+        </span>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         {/* Checklist */}
         <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <h3 className="text-sm font-semibold text-slate-800">
-              {MONTHS[activeMonth]} {activeYear} — {monthTransactions.length} item{monthTransactions.length !== 1 ? 's' : ''}
-            </h3>
-          </div>
-
           {monthTransactions.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-slate-400">
               No items yet. Add one using the form.
@@ -154,51 +146,10 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           </datalist>
         </div>
 
-        {/* Right panel */}
+        {/* Add item panel */}
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Month summary</h4>
-            {categoryTotals.length === 0 ? (
-              <p className="text-sm text-slate-400">Check items to see totals</p>
-            ) : (
-              <div className="space-y-1.5">
-                {categoryTotals.map(([cat, amt]) => (
-                  <div key={cat} className="flex justify-between text-sm">
-                    <span className="text-slate-600">{cat}</span>
-                    <span className="font-medium text-slate-800">{fmt(amt)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
-              <span className="text-sm font-semibold text-slate-800">Net</span>
-              <span className={`text-lg font-semibold ${checkedTotal >= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                {checkedTotal < 0 ? '+' : ''}{fmt(checkedTotal)}
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
             <h4 className="mb-3 text-sm font-semibold text-slate-800">Add item</h4>
-            <div className="mb-3 grid grid-cols-2 gap-1.5">
-              <button
-                onClick={() => setType('income')}
-                className={`rounded-lg border py-1.5 text-xs font-medium ${
-                  type === 'income' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-500'
-                }`}
-              >
-                Income
-              </button>
-              <button
-                onClick={() => setType('expense')}
-                className={`rounded-lg border py-1.5 text-xs font-medium ${
-                  type === 'expense' ? 'border-red-300 bg-red-50 text-red-700' : 'border-slate-200 text-slate-500'
-                }`}
-              >
-                Expense
-              </button>
-            </div>
-
             <div className="space-y-2">
               <input
                 placeholder="Item name"

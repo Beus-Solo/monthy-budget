@@ -13,11 +13,3 @@ export interface Transaction {
   createdAt: any;
   updatedAt: any;
 }
-
-export interface BudgetConfig {
-  id: string;
-  startingBalance: number;
-  userId: string;
-  createdAt: any;
-  updatedAt: any;
-}

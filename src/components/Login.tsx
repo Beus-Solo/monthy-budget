@@ -1,30 +1,30 @@
 import { useState, FormEvent } from 'react';
 import { Wallet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { usernameToEmail } from '../lib/username';
 
 export default function Login() {
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setInfo(null);
-    setSubmitting(true);
-    const message = mode === 'signin'
-      ? await signIn(email, password)
-      : await signUp(email, password);
-    setSubmitting(false);
-    if (message) {
-      setError(message);
-    } else if (mode === 'signup') {
-      setInfo('Check your email to confirm your account, then sign in.');
+    if (!username.trim()) {
+      setError('Enter a username');
+      return;
     }
+    setSubmitting(true);
+    const email = usernameToEmail(username);
+    const message = mode === 'signin'
+      ? await signIn(email, pin)
+      : await signUp(email, pin);
+    setSubmitting(false);
+    if (message) setError(message);
   };
 
   return (
@@ -40,14 +40,14 @@ export default function Login() {
         <div className="mb-5 flex gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
           <button
             type="button"
-            onClick={() => { setMode('signin'); setError(null); setInfo(null); }}
+            onClick={() => { setMode('signin'); setError(null); }}
             className={`flex-1 rounded-full py-1.5 transition-colors ${mode === 'signin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
           >
             Sign in
           </button>
           <button
             type="button"
-            onClick={() => { setMode('signup'); setError(null); setInfo(null); }}
+            onClick={() => { setMode('signup'); setError(null); }}
             className={`flex-1 rounded-full py-1.5 transition-colors ${mode === 'signup' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
           >
             Sign up
@@ -56,25 +56,27 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-2.5">
           <input
-            type="email"
+            type="text"
             required
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            autoCapitalize="none"
+            autoCorrect="off"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
           />
           <input
             type="password"
             required
             minLength={6}
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            inputMode="numeric"
+            placeholder="PIN (6+ digits)"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
             className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
           />
 
           {error && <p className="text-xs text-red-600">{error}</p>}
-          {info && <p className="text-xs text-emerald-600">{info}</p>}
 
           <button
             type="submit"

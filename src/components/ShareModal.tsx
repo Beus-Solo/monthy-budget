@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { X, Trash2, UserPlus, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { usernameToEmail, emailToUsername } from '../lib/username';
 
 interface Viewer {
   id: string;
@@ -20,25 +21,29 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
   const { user, signOut, secureAccount } = useAuth();
   const isAnonymous = (user as any)?.is_anonymous === true;
 
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteUsername, setInviteUsername] = useState('');
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
 
-  const [secureEmail, setSecureEmail] = useState('');
-  const [securePassword, setSecurePassword] = useState('');
+  const [secureUsername, setSecureUsername] = useState('');
+  const [securePin, setSecurePin] = useState('');
   const [secureError, setSecureError] = useState<string | null>(null);
   const [secureInfo, setSecureInfo] = useState<string | null>(null);
   const [secureBusy, setSecureBusy] = useState(false);
 
   const handleInvite = async () => {
     setInviteError(null);
+    if (!inviteUsername.trim()) {
+      setInviteError('Enter a username');
+      return;
+    }
     setInviteBusy(true);
-    const err = await inviteViewer(inviteEmail);
+    const err = await inviteViewer(usernameToEmail(inviteUsername));
     setInviteBusy(false);
     if (err) {
       setInviteError(err);
     } else {
-      setInviteEmail('');
+      setInviteUsername('');
     }
   };
 
@@ -46,13 +51,17 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
     e.preventDefault();
     setSecureError(null);
     setSecureInfo(null);
+    if (!secureUsername.trim()) {
+      setSecureError('Enter a username');
+      return;
+    }
     setSecureBusy(true);
-    const err = await secureAccount(secureEmail, securePassword);
+    const err = await secureAccount(usernameToEmail(secureUsername), securePin);
     setSecureBusy(false);
     if (err) {
       setSecureError(err);
     } else {
-      setSecureInfo('Account secured. Check your email to confirm the address.');
+      setSecureInfo('Account secured. Sign in with this username and PIN next time.');
     }
   };
 
@@ -66,28 +75,33 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
           </button>
         </div>
 
-        <p className="mb-4 truncate text-xs text-slate-500">Signed in as {user?.email ?? 'anonymous session'}</p>
+        <p className="mb-4 truncate text-xs text-slate-500">
+          Signed in as {user?.email ? emailToUsername(user.email) : 'anonymous session'}
+        </p>
 
         {isAnonymous && (
           <div className="mb-5 rounded-2xl bg-amber-50 p-4">
             <p className="mb-3 text-sm font-medium text-amber-800">Secure your account</p>
-            <p className="mb-3 text-xs text-amber-700">Add an email and password so you can sign in from other devices and this data is never lost.</p>
+            <p className="mb-3 text-xs text-amber-700">Pick a username and PIN so you can sign in from other devices and this data is never lost.</p>
             <form onSubmit={handleSecure} className="space-y-2">
               <input
-                type="email"
+                type="text"
                 required
-                placeholder="Your email"
-                value={secureEmail}
-                onChange={(e) => setSecureEmail(e.target.value)}
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="Username"
+                value={secureUsername}
+                onChange={(e) => setSecureUsername(e.target.value)}
                 className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400"
               />
               <input
                 type="password"
                 required
                 minLength={6}
-                placeholder="Choose a password"
-                value={securePassword}
-                onChange={(e) => setSecurePassword(e.target.value)}
+                inputMode="numeric"
+                placeholder="Choose a PIN (6+ digits)"
+                value={securePin}
+                onChange={(e) => setSecurePin(e.target.value)}
                 className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400"
               />
               {secureError && <p className="text-xs text-red-600">{secureError}</p>}
@@ -106,13 +120,15 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
         {canEdit ? (
           <div className="mb-5">
             <p className="mb-2 text-sm font-medium text-slate-800">Share view-only access</p>
-            <p className="mb-3 text-xs text-slate-500">Invite someone to see this budget without being able to edit it.</p>
+            <p className="mb-3 text-xs text-slate-500">Give someone a username and PIN to see this budget without being able to edit it.</p>
             <div className="mb-3 flex gap-2">
               <input
-                type="email"
-                placeholder="Their email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
+                type="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="Their username"
+                value={inviteUsername}
+                onChange={(e) => setInviteUsername(e.target.value)}
                 className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
               />
               <button
@@ -124,12 +140,15 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
               </button>
             </div>
             {inviteError && <p className="mb-2 text-xs text-red-600">{inviteError}</p>}
+            <p className="mb-3 text-xs text-slate-400">
+              They'll sign up on their own device with this exact username and a PIN of their choice.
+            </p>
 
             {viewers.length > 0 && (
               <div className="space-y-1.5">
                 {viewers.map(v => (
                   <div key={v.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm">
-                    <span className="truncate text-slate-700">{v.viewer_email}</span>
+                    <span className="truncate text-slate-700">{emailToUsername(v.viewer_email)}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={`text-[11px] font-medium ${v.viewer_id ? 'text-emerald-600' : 'text-slate-400'}`}>
                         {v.viewer_id ? 'Active' : 'Pending'}

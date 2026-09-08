@@ -11,6 +11,7 @@ const mapTransactionFromDB = (row: any): Transaction => ({
   name: row.name || row.category,
   type: row.type,
   checked: row.checked ?? false,
+  recurring: row.recurring ?? false,
   note: row.note,
   userId: row.user_id,
   createdAt: row.created_at,
@@ -91,6 +92,7 @@ export const useBudgetData = () => {
       name: data.name,
       type: data.type,
       checked: false,
+      recurring: data.recurring,
       note: data.note,
       user_id: user.id
     });
@@ -111,7 +113,7 @@ export const useBudgetData = () => {
     await supabase.from('transactions').update({ checked: newChecked }).eq('id', id).eq('user_id', user.id);
   };
 
-  const updateTransaction = async (id: string, updates: Partial<Pick<Transaction, 'name' | 'category' | 'amount'>>) => {
+  const updateTransaction = async (id: string, updates: Partial<Pick<Transaction, 'name' | 'category' | 'amount' | 'recurring'>>) => {
     if (!user) return;
     setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     await supabase.from('transactions').update(updates).eq('id', id).eq('user_id', user.id);

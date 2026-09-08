@@ -8,6 +8,7 @@ export interface Transaction {
   name: string;
   type: TransactionType;
   checked: boolean;
+  recurring: boolean;
   note: string;
   userId: string;
   createdAt: any;

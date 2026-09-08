@@ -1,24 +1,32 @@
-import { useState, useMemo } from 'react';
-import { Trash2, Plus, Check } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Transaction } from '../types';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+type NewTransaction = Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'checked'>;
+
 interface Props {
   transactions: Transaction[];
-  onAdd: (data: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'checked'>) => void;
+  onAdd: (data: NewTransaction) => void;
   onDelete: (id: string) => void;
   onToggleChecked: (id: string) => void;
-  onUpdate: (id: string, updates: Partial<Pick<Transaction, 'name' | 'category' | 'amount'>>) => void;
+  onUpdate: (id: string, updates: Partial<Pick<Transaction, 'name' | 'category' | 'amount' | 'recurring'>>) => void;
 }
+
+const itemKey = (name: string, category: string) => `${name.trim().toLowerCase()}|${category.trim().toLowerCase()}`;
+
+const toDateStr = (year: number, month: number, day: number) =>
+  `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
 export default function MonthlyChecklist({ transactions, onAdd, onDelete, onToggleChecked, onUpdate }: Props) {
   const now = new Date();
   const [activeMonth, setActiveMonth] = useState(now.getMonth());
-  const [activeYear] = useState(now.getFullYear());
+  const [activeYear, setActiveYear] = useState(now.getFullYear());
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
+  const [recurring, setRecurring] = useState(false);
 
   const knownCategories = useMemo(() => {
     return Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
@@ -31,29 +39,95 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
     });
   }, [transactions, activeMonth, activeYear]);
 
-  const monthTotal = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const monthTotal = monthTransactions
+    .filter(t => t.checked)
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const fmt = (n: number) => `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // Auto-copy recurring items into the active month if they aren't there yet.
+  const seededMonths = useRef(new Set<string>());
+  useEffect(() => {
+    const monthKey = `${activeYear}-${activeMonth}`;
+    if (seededMonths.current.has(monthKey)) return;
+
+    const byKey = new Map<string, Transaction[]>();
+    transactions.filter(t => t.recurring).forEach(t => {
+      const key = itemKey(t.name, t.category);
+      byKey.set(key, [...(byKey.get(key) ?? []), t]);
+    });
+
+    const recurringTemplates = new Map<string, { tx: Transaction; earliestDate: string }>();
+    byKey.forEach((txs, key) => {
+      const latest = txs.reduce((a, b) => (b.date > a.date ? b : a));
+      const earliestDate = txs.reduce((min, t) => (t.date < min ? t.date : min), txs[0].date);
+      recurringTemplates.set(key, { tx: latest, earliestDate });
+    });
+
+    const presentKeys = new Set(monthTransactions.map(t => itemKey(t.name, t.category)));
+    const activeMonthStart = toDateStr(activeYear, activeMonth, 1);
+
+    recurringTemplates.forEach(({ tx, earliestDate }, key) => {
+      if (presentKeys.has(key)) return;
+      if (activeMonthStart < earliestDate) return;
+      onAdd({
+        amount: tx.amount,
+        date: activeMonthStart,
+        category: tx.category,
+        name: tx.name,
+        type: 'expense',
+        recurring: true,
+        note: ''
+      });
+    });
+
+    seededMonths.current.add(monthKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMonth, activeYear, transactions]);
 
   const handleAdd = () => {
     if (!name.trim()) return;
     const day = Math.min(now.getDate(), 28);
-    const date = new Date(activeYear, activeMonth, day).toISOString().split('T')[0];
+    const date = toDateStr(activeYear, activeMonth, day);
     onAdd({
       amount: parseFloat(amount) || 0,
       date,
       category: category.trim() || 'Uncategorized',
       name: name.trim(),
       type: 'expense',
+      recurring,
       note: ''
     });
     setName('');
     setCategory('');
     setAmount('');
+    setRecurring(false);
   };
+
+  const goToPrevYear = () => setActiveYear(y => y - 1);
+  const goToNextYear = () => setActiveYear(y => y + 1);
 
   return (
     <div className="space-y-4">
+      {/* Year switcher */}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          onClick={goToPrevYear}
+          aria-label="Previous year"
+          className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="text-sm font-semibold text-slate-700">{activeYear}</span>
+        <button
+          onClick={goToNextYear}
+          aria-label="Next year"
+          className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
       {/* Month tabs */}
       <div className="flex gap-1 overflow-x-auto border-b border-slate-200 pb-px">
         {MONTHS.map((m, i) => (
@@ -130,6 +204,17 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                   />
 
                   <button
+                    onClick={() => onUpdate(t.id, { recurring: !t.recurring })}
+                    aria-label={t.recurring ? 'Stop repeating monthly' : 'Repeat every month'}
+                    title={t.recurring ? 'Repeats every month' : 'Repeat every month'}
+                    className={`shrink-0 rounded p-1 ${
+                      t.recurring ? 'text-indigo-600' : 'text-slate-300 hover:text-slate-500'
+                    }`}
+                  >
+                    <Repeat className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
                     onClick={() => onDelete(t.id)}
                     aria-label="Delete item"
                     className="shrink-0 rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
@@ -172,6 +257,15 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
               />
+              <label className="flex items-center gap-2 px-0.5 text-xs text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={recurring}
+                  onChange={(e) => setRecurring(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400"
+                />
+                Repeat every month
+              </label>
               <button
                 onClick={handleAdd}
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700"

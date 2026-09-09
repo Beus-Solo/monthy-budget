@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, PointerEvent as ReactPointerEvent } from 'react';
 import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight, X, Wallet2, ListChecks } from 'lucide-react';
 import { Transaction } from '../types';
 
@@ -51,6 +51,37 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [recurring, setRecurring] = useState(false);
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const dragStartX = useRef(0);
+  const dragMoved = useRef(false);
+
+  const handleCarouselPointerDown = (e: ReactPointerEvent) => {
+    setIsDragging(true);
+    dragStartX.current = e.clientX;
+    dragMoved.current = false;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleCarouselPointerMove = (e: ReactPointerEvent) => {
+    if (!isDragging) return;
+    const delta = e.clientX - dragStartX.current;
+    if (Math.abs(delta) > 5) dragMoved.current = true;
+    setDragX(delta);
+  };
+
+  const endCarouselDrag = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const threshold = MONTH_PILL_W / 2;
+    if (dragX < -threshold) {
+      setActiveMonth(m => Math.min(11, m + 1));
+    } else if (dragX > threshold) {
+      setActiveMonth(m => Math.max(0, m - 1));
+    }
+    setDragX(0);
+  };
 
   const knownCategories = useMemo(() => {
     return Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
@@ -173,12 +204,22 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       </div>
 
       {/* Month carousel */}
-      <div className="overflow-hidden" style={{ width: MONTH_STRIP_W, marginLeft: 'auto', marginRight: 'auto', marginBottom: 8 }}>
+      <div
+        className="overflow-hidden select-none"
+        style={{ width: MONTH_STRIP_W, marginLeft: 'auto', marginRight: 'auto', marginBottom: 8, touchAction: 'pan-y', cursor: isDragging ? 'grabbing' : 'grab' }}
+        onPointerDown={handleCarouselPointerDown}
+        onPointerMove={handleCarouselPointerMove}
+        onPointerUp={endCarouselDrag}
+        onPointerCancel={endCarouselDrag}
+        onPointerLeave={isDragging ? endCarouselDrag : undefined}
+      >
         <div
-          className="flex items-center transition-transform duration-300 ease-out"
+          className="flex items-center ease-out"
           style={{
             gap: MONTH_GAP,
-            transform: `translateX(${MONTH_STRIP_W / 2 - MONTH_PILL_W / 2 - activeMonth * (MONTH_PILL_W + MONTH_GAP)}px)`
+            transitionProperty: 'transform',
+            transitionDuration: isDragging ? '0ms' : '300ms',
+            transform: `translateX(${MONTH_STRIP_W / 2 - MONTH_PILL_W / 2 - activeMonth * (MONTH_PILL_W + MONTH_GAP) + dragX}px)`
           }}
         >
           {MONTHS.map((m, i) => {
@@ -186,7 +227,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
             return (
               <button
                 key={m}
-                onClick={() => setActiveMonth(i)}
+                onClick={() => { if (!dragMoved.current) setActiveMonth(i); }}
                 className={`shrink-0 whitespace-nowrap rounded-full py-1.5 text-sm font-medium transition-all duration-300 ${
                   i === activeMonth
                     ? 'bg-slate-900 text-white shadow-sm'

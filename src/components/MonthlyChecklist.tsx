@@ -205,10 +205,10 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </div>
       </div>
 
-      {/* Gradient summary card */}
-      <div className="rounded-3xl bg-gradient-to-br from-emerald-200 via-teal-100 to-emerald-50 p-5 shadow-sm">
+      {/* Summary card */}
+      <div className="rounded-3xl bg-gradient-to-br from-white to-orange-50 border border-orange-100/60 p-5 shadow-sm">
         <div className="flex items-center gap-2 text-slate-700">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/60">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-100/60">
             <Wallet2 className="h-4 w-4" />
           </div>
           <span className="text-sm font-medium">{MONTHS[activeMonth]} {activeYear}</span>
@@ -216,12 +216,12 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         <p className="mt-4 text-4xl font-bold tracking-tight text-slate-900">{fmt(paidTotal)}</p>
         <p className="mt-1 text-xs font-medium text-slate-500">PAID SO FAR</p>
 
-        <div className="mt-5 flex items-center gap-6 border-t border-white/50 pt-4">
+        <div className="mt-5 flex items-center gap-6 border-t border-orange-100 pt-4">
           <div>
             <p className="text-xs text-slate-500">Unpaid</p>
             <p className="text-sm font-semibold text-slate-800">{fmt(unpaidTotal)}</p>
           </div>
-          <div className="h-8 w-px bg-white/60" />
+          <div className="h-8 w-px bg-orange-100" />
           <div>
             <p className="text-xs text-slate-500">Items</p>
             <p className="text-sm font-semibold text-slate-800">{monthTransactions.length}</p>
@@ -231,15 +231,15 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-gradient-to-br from-orange-100 to-amber-50 p-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/60">
+        <div className="rounded-2xl bg-gradient-to-br from-white to-orange-50 border border-orange-100/60 p-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100/60">
             <ListChecks className="h-4 w-4 text-slate-700" />
           </div>
           <p className="mt-3 text-xl font-bold text-slate-900">{unpaidCount}</p>
           <p className="text-xs text-slate-500">Unpaid item{unpaidCount !== 1 ? 's' : ''}</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-50 p-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/60">
+        <div className="rounded-2xl bg-gradient-to-br from-white to-orange-50 border border-orange-100/60 p-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100/60">
             <Repeat className="h-4 w-4 text-slate-700" />
           </div>
           <p className="mt-3 text-xl font-bold text-slate-900">{recurringCount}</p>

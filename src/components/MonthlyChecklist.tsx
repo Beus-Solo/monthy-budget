@@ -173,7 +173,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       </div>
 
       {/* Month carousel */}
-      <div className="overflow-hidden" style={{ width: MONTH_STRIP_W, margin: '0 auto' }}>
+      <div className="overflow-hidden" style={{ width: MONTH_STRIP_W, marginLeft: 'auto', marginRight: 'auto', marginBottom: 8 }}>
         <div
           className="flex items-center transition-transform duration-300 ease-out"
           style={{

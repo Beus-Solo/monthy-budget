@@ -12,7 +12,7 @@ export default function Header({ onOpenSettings }: Props) {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
             <Wallet className="h-4.5 w-4.5" />
           </div>
-          <span className="text-lg font-semibold tracking-tight text-slate-900">Budget</span>
+          <span className="text-lg font-semibold tracking-tight text-slate-900">TRAKMTRX</span>
         </div>
         <button
           onClick={onOpenSettings}

@@ -1,5 +1,4 @@
-import { useState, useRef, FormEvent, KeyboardEvent, ClipboardEvent } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { useState, useRef, useEffect, FormEvent, KeyboardEvent, ClipboardEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usernameToEmail } from '../lib/username';
 
@@ -58,6 +57,17 @@ export default function Login() {
     setError(null);
   };
 
+  useEffect(() => {
+    const prevBody = document.body.style.background;
+    const prevHtml = document.documentElement.style.background;
+    document.body.style.background = '#fff';
+    document.documentElement.style.background = '#fff';
+    return () => {
+      document.body.style.background = prevBody;
+      document.documentElement.style.background = prevHtml;
+    };
+  }, []);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -79,12 +89,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-white px-6 py-8">
-      <div className="mx-auto flex max-w-sm items-center justify-end">
-        <button onClick={toggleMode} className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-slate-900">
-          {mode === 'signin' ? 'Sign Up' : 'Sign In'} <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
       <div className="mx-auto max-w-sm">
         <div className="mt-6 mb-4">
           <WalletDoodle />

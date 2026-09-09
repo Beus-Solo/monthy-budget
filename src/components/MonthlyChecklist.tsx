@@ -33,6 +33,11 @@ interface Props {
 
 const itemKey = (name: string, category: string) => `${name.trim().toLowerCase()}|${category.trim().toLowerCase()}`;
 
+const MONTH_PILL_W = 56;
+const MONTH_GAP = 10;
+const MONTH_VISIBLE = 5;
+const MONTH_STRIP_W = MONTH_VISIBLE * MONTH_PILL_W + (MONTH_VISIBLE - 1) * MONTH_GAP;
+
 const toDateStr = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
@@ -46,11 +51,6 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [recurring, setRecurring] = useState(false);
-
-  const activeMonthRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    activeMonthRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [activeMonth]);
 
   const knownCategories = useMemo(() => {
     return Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
@@ -172,22 +172,37 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </button>
       </div>
 
-      {/* Month pills */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
-        {MONTHS.map((m, i) => (
-          <button
-            key={m}
-            ref={i === activeMonth ? activeMonthRef : undefined}
-            onClick={() => setActiveMonth(i)}
-            className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              i === activeMonth
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-white/70 text-slate-500 hover:bg-white'
-            }`}
-          >
-            {m.slice(0, 3)}
-          </button>
-        ))}
+      {/* Month carousel */}
+      <div className="overflow-hidden" style={{ width: MONTH_STRIP_W, margin: '0 auto' }}>
+        <div
+          className="flex items-center transition-transform duration-300 ease-out"
+          style={{
+            gap: MONTH_GAP,
+            transform: `translateX(${MONTH_STRIP_W / 2 - MONTH_PILL_W / 2 - activeMonth * (MONTH_PILL_W + MONTH_GAP)}px)`
+          }}
+        >
+          {MONTHS.map((m, i) => {
+            const distance = Math.abs(i - activeMonth);
+            return (
+              <button
+                key={m}
+                onClick={() => setActiveMonth(i)}
+                className={`shrink-0 whitespace-nowrap rounded-full py-1.5 text-sm font-medium transition-all duration-300 ${
+                  i === activeMonth
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white/70 text-slate-500 hover:bg-white'
+                }`}
+                style={{
+                  width: MONTH_PILL_W,
+                  opacity: i === activeMonth ? 1 : distance === 1 ? 0.75 : distance === 2 ? 0.45 : 0.2,
+                  transform: `scale(${i === activeMonth ? 1 : 0.9})`
+                }}
+              >
+                {m.slice(0, 3)}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Gradient summary card */}

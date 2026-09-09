@@ -47,15 +47,22 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const [amount, setAmount] = useState('');
   const [recurring, setRecurring] = useState(false);
 
+  const activeMonthRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    activeMonthRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [activeMonth]);
+
   const knownCategories = useMemo(() => {
     return Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
   }, [transactions]);
 
   const monthTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      const d = new Date(t.date + 'T00:00:00');
-      return d.getMonth() === activeMonth && d.getFullYear() === activeYear;
-    });
+    return transactions
+      .filter(t => {
+        const d = new Date(t.date + 'T00:00:00');
+        return d.getMonth() === activeMonth && d.getFullYear() === activeYear;
+      })
+      .sort((a, b) => Number(a.checked) - Number(b.checked));
   }, [transactions, activeMonth, activeYear]);
 
   const paidTotal = monthTransactions
@@ -170,6 +177,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         {MONTHS.map((m, i) => (
           <button
             key={m}
+            ref={i === activeMonth ? activeMonthRef : undefined}
             onClick={() => setActiveMonth(i)}
             className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
               i === activeMonth

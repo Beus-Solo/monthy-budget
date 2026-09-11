@@ -20,6 +20,47 @@ const colorFor = (category: string) => {
   return CATEGORY_COLORS[hash % CATEGORY_COLORS.length];
 };
 
+function CategoryPicker({ value, onChange, categories, placeholder }: { value: string; onChange: (v: string) => void; categories: string[]; placeholder: string }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = categories.filter(c => c.toLowerCase().includes(value.trim().toLowerCase()));
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <input
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+          {filtered.map(c => (
+            <button
+              key={c}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); onChange(c); setOpen(false); }}
+              className="block w-full truncate rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type NewTransaction = Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'checked'>;
 
 interface Props {
@@ -582,10 +623,6 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
               )}
             </>
           )}
-
-          <datalist id="category-suggestions">
-            {knownCategories.map(c => <option key={c} value={c} />)}
-          </datalist>
         </div>
       )}
 
@@ -626,12 +663,11 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 autoFocus
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
               />
-              <input
-                placeholder="Category (type your own)"
+              <CategoryPicker
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                list="category-suggestions"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
+                onChange={setCategory}
+                categories={knownCategories}
+                placeholder="Category (type your own)"
               />
               <input
                 type="number"

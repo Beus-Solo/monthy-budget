@@ -96,6 +96,9 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       .sort((a, b) => Number(a.checked) - Number(b.checked));
   }, [transactions, activeMonth, activeYear]);
 
+  const uncheckedItems = useMemo(() => monthTransactions.filter(t => !t.checked), [monthTransactions]);
+  const checkedItems = useMemo(() => monthTransactions.filter(t => t.checked), [monthTransactions]);
+
   const paidTotal = monthTransactions
     .filter(t => t.checked)
     .reduce((sum, t) => sum + t.amount, 0);
@@ -345,81 +348,120 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
               No items yet. Tap + to add one.
             </div>
           ) : (
-            monthTransactions.map(t => {
-              const c = colorFor(t.category);
-              return (
-                <div
-                  key={t.id}
-                  className={`flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm ${t.checked ? 'opacity-60' : ''}`}
-                >
-                  <button
-                    onClick={() => canEdit && onToggleChecked(t.id)}
-                    disabled={!canEdit}
-                    aria-label={t.checked ? 'Mark as unpaid' : 'Mark as paid'}
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
-                      t.checked ? 'border-slate-900 bg-slate-900' : 'border-slate-200 bg-white'
-                    } ${!canEdit ? 'cursor-default' : ''}`}
-                  >
-                    {t.checked && <Check className="h-3.5 w-3.5 text-white" />}
-                  </button>
+            <>
+              {uncheckedItems.map(t => {
+                const c = colorFor(t.category);
+                return (
+                  <div key={t.id} className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm">
+                    <button
+                      onClick={() => canEdit && onToggleChecked(t.id)}
+                      disabled={!canEdit}
+                      aria-label="Mark as paid"
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 bg-white ${!canEdit ? 'cursor-default' : ''}`}
+                    />
 
-                  <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1">
+                      {canEdit ? (
+                        <input
+                          defaultValue={t.name}
+                          onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
+                          className="w-full border-none bg-transparent p-0 text-sm font-medium text-slate-800 outline-none"
+                        />
+                      ) : (
+                        <p className="truncate text-sm font-medium text-slate-800">{t.name}</p>
+                      )}
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${c.chip}`}>
+                          {t.category}
+                        </span>
+                        {t.recurring && <Repeat className="h-3 w-3 text-slate-400" />}
+                      </div>
+                    </div>
+
                     {canEdit ? (
                       <input
-                        defaultValue={t.name}
-                        onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
-                        className={`w-full border-none bg-transparent p-0 text-sm font-medium outline-none ${
-                          t.checked ? 'text-slate-400 line-through' : 'text-slate-800'
-                        }`}
+                        type="number"
+                        step="0.01"
+                        defaultValue={t.amount}
+                        onBlur={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })}
+                        className="w-16 shrink-0 border-none bg-transparent text-right text-sm font-semibold text-slate-800 outline-none"
                       />
                     ) : (
-                      <p className={`truncate text-sm font-medium ${t.checked ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
-                        {t.name}
-                      </p>
+                      <span className="shrink-0 text-sm font-semibold text-slate-800">{t.amount}</span>
                     )}
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${c.chip}`}>
-                        {t.category}
-                      </span>
-                      {t.recurring && <Repeat className="h-3 w-3 text-slate-400" />}
-                    </div>
+
+                    {canEdit && (
+                      <>
+                        <button
+                          onClick={() => onUpdate(t.id, { recurring: !t.recurring })}
+                          aria-label={t.recurring ? 'Stop repeating monthly' : 'Repeat every month'}
+                          title={t.recurring ? 'Repeats every month' : 'Repeat every month'}
+                          className={`shrink-0 rounded-full p-1.5 ${t.recurring ? 'text-indigo-500' : 'text-slate-300 hover:text-slate-500'}`}
+                        >
+                          <Repeat className="h-3.5 w-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => onDelete(t.id)}
+                          aria-label="Delete item"
+                          className="shrink-0 rounded-full p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
                   </div>
+                );
+              })}
 
-                  {canEdit ? (
-                    <input
-                      type="number"
-                      step="0.01"
-                      defaultValue={t.amount}
-                      onBlur={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })}
-                      className="w-16 shrink-0 border-none bg-transparent text-right text-sm font-semibold text-slate-800 outline-none"
-                    />
-                  ) : (
-                    <span className="shrink-0 text-sm font-semibold text-slate-800">{t.amount}</span>
-                  )}
+              {checkedItems.length > 0 && (
+                <div className="divide-y divide-orange-100/60 overflow-hidden rounded-2xl border border-orange-100/50 bg-gradient-to-br from-white to-orange-50/80">
+                  {checkedItems.map(t => {
+                    const c = colorFor(t.category);
+                    return (
+                      <div key={t.id} className="flex items-center gap-2.5 px-3 py-2 opacity-60">
+                        <button
+                          onClick={() => canEdit && onToggleChecked(t.id)}
+                          disabled={!canEdit}
+                          aria-label="Mark as unpaid"
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-slate-900 ${!canEdit ? 'cursor-default' : ''}`}
+                        >
+                          <Check className="h-2.5 w-2.5 text-white" />
+                        </button>
 
-                  {canEdit && (
-                    <>
-                      <button
-                        onClick={() => onUpdate(t.id, { recurring: !t.recurring })}
-                        aria-label={t.recurring ? 'Stop repeating monthly' : 'Repeat every month'}
-                        title={t.recurring ? 'Repeats every month' : 'Repeat every month'}
-                        className={`shrink-0 rounded-full p-1.5 ${t.recurring ? 'text-indigo-500' : 'text-slate-300 hover:text-slate-500'}`}
-                      >
-                        <Repeat className="h-3.5 w-3.5" />
-                      </button>
+                        <div className="min-w-0 flex-1">
+                          {canEdit ? (
+                            <input
+                              defaultValue={t.name}
+                              onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
+                              className="w-full border-none bg-transparent p-0 text-[13px] font-medium text-slate-400 line-through outline-none"
+                            />
+                          ) : (
+                            <p className="truncate text-[13px] font-medium text-slate-400 line-through">{t.name}</p>
+                          )}
+                        </div>
 
-                      <button
-                        onClick={() => onDelete(t.id)}
-                        aria-label="Delete item"
-                        className="shrink-0 rounded-full p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </>
-                  )}
+                        <span className={`hidden shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium sm:inline-flex ${c.chip}`}>
+                          {t.category}
+                        </span>
+
+                        <span className="w-14 shrink-0 text-right text-[13px] font-semibold text-slate-500">{t.amount}</span>
+
+                        {canEdit && (
+                          <button
+                            onClick={() => onDelete(t.id)}
+                            aria-label="Delete item"
+                            className="shrink-0 rounded-full p-1 text-slate-300 hover:bg-red-50 hover:text-red-500"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })
+              )}
+            </>
           )}
 
           <datalist id="category-suggestions">

@@ -9,6 +9,7 @@ const mapTransactionFromDB = (row: any): Transaction => ({
   category: row.category,
   name: row.name || row.category,
   type: row.type,
+  kind: row.kind ?? 'bill',
   checked: row.checked ?? false,
   recurring: row.recurring ?? false,
   note: row.note,
@@ -70,10 +71,11 @@ export const useBudgetData = (ownerId: string | null, canEdit: boolean) => {
 
     const tempId = crypto.randomUUID();
     const now = new Date().toISOString();
+    const checked = data.kind === 'shopping';
     const newTx: Transaction = {
       ...data,
       id: tempId,
-      checked: false,
+      checked,
       userId: ownerId,
       createdAt: now,
       updatedAt: now
@@ -90,7 +92,8 @@ export const useBudgetData = (ownerId: string | null, canEdit: boolean) => {
       category: data.category,
       name: data.name,
       type: data.type,
-      checked: false,
+      kind: data.kind,
+      checked,
       recurring: data.recurring,
       note: data.note,
       user_id: ownerId

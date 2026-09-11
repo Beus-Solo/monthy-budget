@@ -41,12 +41,20 @@ const MONTH_STRIP_W = MONTH_VISIBLE * MONTH_PILL_W + (MONTH_VISIBLE - 1) * MONTH
 const toDateStr = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
+const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+
+const shortDate = (dateStr: string) => {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
 export default function MonthlyChecklist({ transactions, onAdd, onDelete, onToggleChecked, onUpdate, canEdit }: Props) {
   const now = new Date();
   const [activeMonth, setActiveMonth] = useState(now.getMonth());
   const [activeYear, setActiveYear] = useState(now.getFullYear());
-  const [activeTab, setActiveTab] = useState<'checklist' | 'category'>('checklist');
+  const [activeTab, setActiveTab] = useState<'checklist' | 'shopping' | 'category'>('checklist');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [shopDate, setShopDate] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
@@ -96,19 +104,26 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       .sort((a, b) => Number(a.checked) - Number(b.checked));
   }, [transactions, activeMonth, activeYear]);
 
-  const uncheckedItems = useMemo(() => monthTransactions.filter(t => !t.checked), [monthTransactions]);
-  const checkedItems = useMemo(() => monthTransactions.filter(t => t.checked), [monthTransactions]);
+  const billTransactions = useMemo(() => monthTransactions.filter(t => t.kind !== 'shopping'), [monthTransactions]);
+  const shoppingTransactions = useMemo(() => monthTransactions.filter(t => t.kind === 'shopping'), [monthTransactions]);
 
-  const paidTotal = monthTransactions
+  const uncheckedItems = useMemo(() => billTransactions.filter(t => !t.checked), [billTransactions]);
+  const checkedItems = useMemo(() => billTransactions.filter(t => t.checked), [billTransactions]);
+
+  const billsPaidTotal = billTransactions
     .filter(t => t.checked)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const unpaidTotal = monthTransactions
+  const shoppingTotal = shoppingTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+  const paidTotal = billsPaidTotal + shoppingTotal;
+
+  const unpaidTotal = billTransactions
     .filter(t => !t.checked)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const unpaidCount = monthTransactions.filter(t => !t.checked).length;
-  const recurringCount = monthTransactions.filter(t => t.recurring).length;
+  const unpaidCount = billTransactions.filter(t => !t.checked).length;
+  const recurringCount = billTransactions.filter(t => t.recurring).length;
 
   const categoryTotals = useMemo(() => {
     const map = new Map<string, number>();
@@ -164,6 +179,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         category: tx.category,
         name: tx.name,
         type: 'expense',
+        kind: 'bill',
         recurring: true,
         note: ''
       });
@@ -175,21 +191,24 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
 
   const handleAdd = () => {
     if (!name.trim()) return;
+    const isShopping = activeTab === 'shopping';
     const day = Math.min(now.getDate(), 28);
-    const date = toDateStr(activeYear, activeMonth, day);
+    const date = isShopping ? (shopDate || toDateStr(activeYear, activeMonth, day)) : toDateStr(activeYear, activeMonth, day);
     onAdd({
       amount: parseFloat(amount) || 0,
       date,
       category: category.trim() || 'Uncategorized',
       name: name.trim(),
       type: 'expense',
-      recurring,
+      kind: isShopping ? 'shopping' : 'bill',
+      recurring: isShopping ? false : recurring,
       note: ''
     });
     setName('');
     setCategory('');
     setAmount('');
     setRecurring(false);
+    setShopDate('');
     setShowAddModal(false);
   };
 
@@ -270,6 +289,11 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </div>
         <p className="mt-4 text-4xl font-bold tracking-tight text-slate-900">{fmt(paidTotal)}</p>
         <p className="mt-1 text-xs font-medium text-slate-500">PAID SO FAR</p>
+        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+          <span>Bills <span className="font-semibold text-slate-700">{fmt(billsPaidTotal)}</span></span>
+          <span className="text-orange-200">•</span>
+          <span>Shopping <span className="font-semibold text-slate-700">{fmt(shoppingTotal)}</span></span>
+        </div>
 
         <div className="mt-5 flex items-center gap-6 border-t border-orange-100 pt-4">
           <div>
@@ -306,15 +330,23 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       <div className="flex gap-1 rounded-full bg-white/70 p-1 text-sm font-medium">
         <button
           onClick={() => setActiveTab('checklist')}
-          className={`flex-1 rounded-full py-1.5 transition-colors ${
+          className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
             activeTab === 'checklist' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           Checklist
         </button>
         <button
+          onClick={() => setActiveTab('shopping')}
+          className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
+            activeTab === 'shopping' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Shopping
+        </button>
+        <button
           onClick={() => setActiveTab('category')}
-          className={`flex-1 rounded-full py-1.5 transition-colors ${
+          className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
             activeTab === 'category' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -371,9 +403,66 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
             </div>
           )}
         </div>
+      ) : activeTab === 'shopping' ? (
+        <div className="space-y-2.5">
+          {shoppingTransactions.length === 0 ? (
+            <div className="rounded-3xl bg-white px-4 py-12 text-center text-sm text-slate-400 shadow-sm">
+              No shopping expenses logged yet this month. Tap + to add one.
+            </div>
+          ) : (
+            <div className="divide-y divide-orange-100/60 overflow-hidden rounded-3xl border border-orange-100/50 bg-white shadow-sm">
+              {shoppingTransactions.map(t => {
+                const c = colorFor(t.category);
+                return (
+                  <div key={t.id} className="flex items-center gap-2.5 px-4 py-3">
+                    <span className="w-11 shrink-0 text-[11px] font-medium text-slate-400">{shortDate(t.date)}</span>
+
+                    <div className="min-w-0 flex-1">
+                      {canEdit ? (
+                        <input
+                          defaultValue={t.name}
+                          onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
+                          className="w-full border-none bg-transparent p-0 text-sm font-medium text-slate-800 outline-none"
+                        />
+                      ) : (
+                        <p className="truncate text-sm font-medium text-slate-800">{t.name}</p>
+                      )}
+                    </div>
+
+                    <span className={`hidden shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium sm:inline-flex ${c.chip}`}>
+                      {t.category}
+                    </span>
+
+                    {canEdit ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        defaultValue={t.amount}
+                        onBlur={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })}
+                        className="w-16 shrink-0 border-none bg-transparent text-right text-sm font-semibold text-slate-800 outline-none"
+                      />
+                    ) : (
+                      <span className="shrink-0 text-sm font-semibold text-slate-800">{t.amount}</span>
+                    )}
+
+                    {canEdit && (
+                      <button
+                        onClick={() => onDelete(t.id)}
+                        aria-label="Delete item"
+                        className="shrink-0 rounded-full p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       ) : (
         <div className="space-y-2.5">
-          {monthTransactions.length === 0 ? (
+          {billTransactions.length === 0 ? (
             <div className="rounded-3xl bg-white px-4 py-12 text-center text-sm text-slate-400 shadow-sm">
               No items yet. Tap + to add one.
             </div>
@@ -501,10 +590,15 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       )}
 
       {/* Floating add button */}
-      {canEdit && (
+      {canEdit && activeTab !== 'category' && (
         <button
-          onClick={() => setShowAddModal(true)}
-          aria-label="Add expense"
+          onClick={() => {
+            if (activeTab === 'shopping') {
+              setShopDate(toDateStr(activeYear, activeMonth, Math.min(now.getDate(), 28)));
+            }
+            setShowAddModal(true);
+          }}
+          aria-label={activeTab === 'shopping' ? 'Add shopping expense' : 'Add expense'}
           className="fixed bottom-6 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800"
         >
           <Plus className="h-6 w-6" />
@@ -519,7 +613,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h4 className="text-base font-semibold text-slate-900">Add expense</h4>
+              <h4 className="text-base font-semibold text-slate-900">{activeTab === 'shopping' ? 'Add shopping expense' : 'Add expense'}</h4>
               <button onClick={() => setShowAddModal(false)} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
                 <X className="h-4 w-4" />
               </button>
@@ -547,20 +641,31 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
               />
-              <label className="flex items-center gap-2 px-0.5 py-1 text-xs text-slate-600">
+              {activeTab === 'shopping' ? (
                 <input
-                  type="checkbox"
-                  checked={recurring}
-                  onChange={(e) => setRecurring(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                  type="date"
+                  value={shopDate}
+                  onChange={(e) => setShopDate(e.target.value)}
+                  min={toDateStr(activeYear, activeMonth, 1)}
+                  max={toDateStr(activeYear, activeMonth, daysInMonth(activeYear, activeMonth))}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base text-slate-700 outline-none focus:border-slate-400 sm:text-sm"
                 />
-                Repeat every month
-              </label>
+              ) : (
+                <label className="flex items-center gap-2 px-0.5 py-1 text-xs text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={recurring}
+                    onChange={(e) => setRecurring(e.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                  />
+                  Repeat every month
+                </label>
+              )}
               <button
                 onClick={handleAdd}
                 className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-3 text-sm font-medium text-white hover:bg-slate-800"
               >
-                <Plus className="h-3.5 w-3.5" /> Add to list
+                <Plus className="h-3.5 w-3.5" /> {activeTab === 'shopping' ? 'Log expense' : 'Add to list'}
               </button>
             </div>
           </div>

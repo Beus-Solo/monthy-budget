@@ -1,4 +1,5 @@
 export type TransactionType = 'income' | 'expense';
+export type TransactionKind = 'bill' | 'shopping';
 
 export interface Transaction {
   id: string;
@@ -7,6 +8,7 @@ export interface Transaction {
   category: string;
   name: string;
   type: TransactionType;
+  kind: TransactionKind;
   checked: boolean;
   recurring: boolean;
   note: string;

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, PointerEvent as ReactPointerEvent } from 'react';
-import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight, X, Wallet2, ListChecks } from 'lucide-react';
+import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight, X, Wallet2, ListChecks, Download } from 'lucide-react';
 import { Transaction } from '../types';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -14,11 +14,25 @@ const CATEGORY_COLORS = [
   { dot: 'bg-fuchsia-400', bar: 'bg-fuchsia-400', chip: 'bg-fuchsia-50 text-fuchsia-700' },
 ];
 
-const colorFor = (category: string) => {
+// Hex equivalents of CATEGORY_COLORS, same order, for drawing PDF colors that match the UI dots/bars.
+const CATEGORY_HEX: [number, number, number][] = [
+  [52, 211, 153],  // emerald-400
+  [129, 140, 248], // indigo-400
+  [251, 146, 60],  // orange-400
+  [251, 113, 133], // rose-400
+  [56, 189, 248],  // sky-400
+  [251, 191, 36],  // amber-400
+  [232, 121, 249], // fuchsia-400
+];
+
+const categoryHash = (category: string) => {
   let hash = 0;
   for (let i = 0; i < category.length; i++) hash = (hash * 31 + category.charCodeAt(i)) >>> 0;
-  return CATEGORY_COLORS[hash % CATEGORY_COLORS.length];
+  return hash;
 };
+
+const colorFor = (category: string) => CATEGORY_COLORS[categoryHash(category) % CATEGORY_COLORS.length];
+const hexColorFor = (category: string) => CATEGORY_HEX[categoryHash(category) % CATEGORY_HEX.length];
 
 function CategoryPicker({ value, onChange, categories, placeholder, onDeleteCategory }: { value: string; onChange: (v: string) => void; categories: string[]; placeholder: string; onDeleteCategory?: (c: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -199,6 +213,122 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   }, [monthTransactions]);
 
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedExportCategories, setSelectedExportCategories] = useState<string[]>([]);
+
+  const openExportModal = () => {
+    setSelectedExportCategories(categoryTotals.map(([cat]) => cat));
+    setShowExportModal(true);
+  };
+
+  const toggleExportCategory = (cat: string) => {
+    setSelectedExportCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+  };
+
+  const allCategoriesSelected = selectedExportCategories.length === categoryTotals.length;
+  const toggleSelectAllExport = () => {
+    setSelectedExportCategories(allCategoriesSelected ? [] : categoryTotals.map(([cat]) => cat));
+  };
+
+  const selectedExportTotal = categoryTotals
+    .filter(([cat]) => selectedExportCategories.includes(cat))
+    .reduce((sum, [, amt]) => sum + amt, 0);
+
+  const handleExportPdf = async () => {
+    const selected = categoryTotals.filter(([cat]) => selectedExportCategories.includes(cat));
+    if (selected.length === 0) return;
+
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const marginX = 40;
+    let y = 0;
+
+    const ensureSpace = (needed: number) => {
+      if (y + needed > pageH - 50) {
+        doc.addPage();
+        y = 50;
+      }
+    };
+
+    // Header band
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageW, 86, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('TRAKMTRX', marginX, 38);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(226, 232, 240);
+    doc.text('Spending Report', marginX, 58);
+    doc.setFontSize(11);
+    doc.text(`${MONTHS[activeMonth]} ${activeYear}`, pageW - marginX, 38, { align: 'right' });
+    doc.setFontSize(9);
+    doc.text(
+      `Generated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      pageW - marginX,
+      58,
+      { align: 'right' }
+    );
+    y = 86 + 36;
+
+    // Total block
+    doc.setTextColor(100, 116, 139);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(selected.length < categoryTotals.length ? 'TOTAL (SELECTED CATEGORIES)' : 'TOTAL', marginX, y);
+    y += 28;
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(28);
+    doc.text(fmt(selectedExportTotal), marginX, y);
+    y += 24;
+    doc.setDrawColor(241, 224, 208);
+    doc.line(marginX, y, pageW - marginX, y);
+    y += 30;
+
+    selected.forEach(([cat, amt]) => {
+      const [r, g, b] = hexColorFor(cat);
+      const items = itemsByCategory.get(cat) ?? [];
+      ensureSpace(26 + items.length * 15 + 20);
+
+      doc.setFillColor(r, g, b);
+      doc.circle(marginX + 4, y - 4, 4, 'F');
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(cat, marginX + 16, y);
+      doc.text(fmt(amt), pageW - marginX, y, { align: 'right' });
+      y += 10;
+
+      const barW = pageW - marginX * 2;
+      const pct = selectedExportTotal > 0 ? amt / selectedExportTotal : 0;
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(marginX, y, barW, 6, 3, 3, 'F');
+      doc.setFillColor(r, g, b);
+      doc.roundedRect(marginX, y, Math.max(barW * pct, 4), 6, 3, 3, 'F');
+      y += 22;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(100, 116, 139);
+      items.forEach(t => {
+        ensureSpace(15);
+        doc.text(t.name, marginX + 16, y);
+        doc.text(fmt(t.amount), pageW - marginX, y, { align: 'right' });
+        y += 15;
+      });
+
+      y += 20;
+    });
+
+    const suffix = selected.length < categoryTotals.length ? '-selected' : '';
+    doc.save(`TRAKMTRX-${MONTHS[activeMonth]}-${activeYear}${suffix}.pdf`);
+    setShowExportModal(false);
+  };
 
   const fmt = (n: number) => `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -656,6 +786,17 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </button>
       )}
 
+      {/* Floating export button */}
+      {activeTab === 'category' && categoryTotals.length > 0 && (
+        <button
+          onClick={openExportModal}
+          aria-label="Export spending report"
+          className="fixed bottom-6 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800"
+        >
+          <Download className="h-6 w-6" />
+        </button>
+      )}
+
       {/* Add item bottom sheet */}
       {canEdit && showAddModal && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center" onClick={() => setShowAddModal(false)}>
@@ -722,6 +863,63 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 <Plus className="h-3.5 w-3.5" /> {activeTab === 'shopping' ? 'Log expense' : 'Add to list'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export report bottom sheet */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center" onClick={() => setShowExportModal(false)}>
+          <div
+            className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h4 className="text-base font-semibold text-slate-900">Export report</h4>
+              <button onClick={() => setShowExportModal(false)} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mb-3 flex items-center justify-between text-xs">
+              <span className="text-slate-500">{MONTHS[activeMonth]} {activeYear}</span>
+              <button type="button" onClick={toggleSelectAllExport} className="font-medium text-slate-700 hover:underline">
+                {allCategoriesSelected ? 'Deselect all' : 'Select all'}
+              </button>
+            </div>
+
+            <div className="max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-slate-100 p-1.5">
+              {categoryTotals.map(([cat, amt]) => {
+                const c = colorFor(cat);
+                const checked = selectedExportCategories.includes(cat);
+                return (
+                  <label key={cat} className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-slate-50">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleExportCategory(cat)}
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                    />
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${c.dot}`} />
+                    <span className="flex-1 truncate text-sm text-slate-700">{cat}</span>
+                    <span className="text-sm font-medium text-slate-500">{fmt(amt)}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 flex items-center justify-between text-sm">
+              <span className="text-slate-500">{selectedExportCategories.length} selected</span>
+              <span className="font-semibold text-slate-800">{fmt(selectedExportTotal)}</span>
+            </div>
+
+            <button
+              onClick={handleExportPdf}
+              disabled={selectedExportCategories.length === 0}
+              className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            >
+              <Download className="h-3.5 w-3.5" /> Export PDF
+            </button>
           </div>
         </div>
       )}

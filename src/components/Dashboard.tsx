@@ -4,6 +4,7 @@ import MonthlyChecklist from './MonthlyChecklist';
 import ShareModal from './ShareModal';
 import { useBudgetData } from '../hooks/useBudgetData';
 import { useBudgetOwner } from '../hooks/useBudgetOwner';
+import { useHiddenCategories } from '../hooks/useHiddenCategories';
 
 export default function Dashboard() {
   const { ownerId, canEdit, loading: ownerLoading, viewers, inviteViewer, revokeViewer } = useBudgetOwner();
@@ -15,6 +16,7 @@ export default function Dashboard() {
     toggleChecked,
     updateTransaction
   } = useBudgetData(ownerId, canEdit);
+  const { hiddenCategories, hideCategory } = useHiddenCategories(ownerId);
   const [showSettings, setShowSettings] = useState(false);
 
   if (loading || ownerLoading) {
@@ -39,6 +41,8 @@ export default function Dashboard() {
           onToggleChecked={toggleChecked}
           onUpdate={updateTransaction}
           canEdit={canEdit}
+          hiddenCategories={hiddenCategories}
+          onHideCategory={hideCategory}
         />
       </main>
       {showSettings && (

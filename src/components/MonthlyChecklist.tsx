@@ -487,8 +487,8 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           </div>
           <div className="h-8 w-px bg-orange-100" />
           <div>
-            <p className="text-xs text-slate-500">Items</p>
-            <p className="text-sm font-semibold text-slate-800">{monthTransactions.length}</p>
+            <p className="text-xs text-slate-500">To be paid</p>
+            <p className="text-sm font-semibold text-slate-800">{billTransactions.length}</p>
           </div>
         </div>
       </div>

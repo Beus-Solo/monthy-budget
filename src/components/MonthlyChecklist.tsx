@@ -20,7 +20,7 @@ const colorFor = (category: string) => {
   return CATEGORY_COLORS[hash % CATEGORY_COLORS.length];
 };
 
-function CategoryPicker({ value, onChange, categories, placeholder }: { value: string; onChange: (v: string) => void; categories: string[]; placeholder: string }) {
+function CategoryPicker({ value, onChange, categories, placeholder, onDeleteCategory }: { value: string; onChange: (v: string) => void; categories: string[]; placeholder: string; onDeleteCategory?: (c: string) => void }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -46,14 +46,25 @@ function CategoryPicker({ value, onChange, categories, placeholder }: { value: s
       {open && filtered.length > 0 && (
         <div className="absolute z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
           {filtered.map(c => (
-            <button
-              key={c}
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); onChange(c); setOpen(false); }}
-              className="block w-full truncate rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-            >
-              {c}
-            </button>
+            <div key={c} className="flex items-center gap-1 rounded-lg hover:bg-slate-50">
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); onChange(c); setOpen(false); }}
+                className="flex-1 truncate px-3 py-2 text-left text-sm text-slate-700"
+              >
+                {c}
+              </button>
+              {onDeleteCategory && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteCategory(c); }}
+                  aria-label={`Delete ${c} category`}
+                  className="shrink-0 rounded-lg p-2 text-slate-300 hover:bg-red-50 hover:text-red-500"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -70,6 +81,8 @@ interface Props {
   onToggleChecked: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Pick<Transaction, 'name' | 'category' | 'amount' | 'recurring'>>) => void;
   canEdit: boolean;
+  hiddenCategories: string[];
+  onHideCategory: (category: string) => void;
 }
 
 const itemKey = (name: string, category: string) => `${name.trim().toLowerCase()}|${category.trim().toLowerCase()}`;
@@ -89,7 +102,7 @@ const shortDate = (dateStr: string) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-export default function MonthlyChecklist({ transactions, onAdd, onDelete, onToggleChecked, onUpdate, canEdit }: Props) {
+export default function MonthlyChecklist({ transactions, onAdd, onDelete, onToggleChecked, onUpdate, canEdit, hiddenCategories, onHideCategory }: Props) {
   const now = new Date();
   const [activeMonth, setActiveMonth] = useState(now.getMonth());
   const [activeYear, setActiveYear] = useState(now.getFullYear());
@@ -133,8 +146,9 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   };
 
   const knownCategories = useMemo(() => {
-    return Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
-  }, [transactions]);
+    const all = Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
+    return all.filter(c => !hiddenCategories.includes(c));
+  }, [transactions, hiddenCategories]);
 
   const monthTransactions = useMemo(() => {
     return transactions
@@ -668,6 +682,10 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 onChange={setCategory}
                 categories={knownCategories}
                 placeholder="Category (type your own)"
+                onDeleteCategory={(c) => {
+                  onHideCategory(c);
+                  if (category === c) setCategory('');
+                }}
               />
               <input
                 type="number"

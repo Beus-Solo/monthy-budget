@@ -500,14 +500,14 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
               />
               <input
                 placeholder="Category (type your own)"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 list="category-suggestions"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
               />
               <input
                 type="number"
@@ -515,7 +515,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
               />
               <label className="flex items-center gap-2 px-0.5 py-1 text-xs text-slate-600">
                 <input

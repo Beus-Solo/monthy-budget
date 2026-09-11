@@ -119,6 +119,17 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [monthTransactions]);
 
+  const itemsByCategory = useMemo(() => {
+    const map = new Map<string, Transaction[]>();
+    monthTransactions.filter(t => t.checked).forEach(t => {
+      const cat = t.category.trim() || 'Uncategorized';
+      map.set(cat, [...(map.get(cat) ?? []), t]);
+    });
+    return map;
+  }, [monthTransactions]);
+
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
   const fmt = (n: number) => `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   // Auto-copy recurring items into the active month if they aren't there yet.
@@ -323,18 +334,37 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
               {categoryTotals.map(([cat, amt]) => {
                 const pct = paidTotal > 0 ? (amt / paidTotal) * 100 : 0;
                 const c = colorFor(cat);
+                const isOpen = expandedCategory === cat;
+                const items = itemsByCategory.get(cat) ?? [];
                 return (
                   <div key={cat}>
-                    <div className="mb-1.5 flex items-center justify-between text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedCategory(isOpen ? null : cat)}
+                      className="mb-1.5 flex w-full items-center justify-between gap-2 text-left text-sm"
+                    >
                       <span className="flex items-center gap-2 font-medium text-slate-700">
                         <span className={`h-2 w-2 rounded-full ${c.dot}`} />
                         {cat}
                       </span>
-                      <span className="font-semibold text-slate-800">{fmt(amt)}</span>
-                    </div>
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-semibold text-slate-800">{fmt(amt)}</span>
+                        <ChevronRight className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                      </span>
+                    </button>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                       <div className={`h-full rounded-full ${c.bar}`} style={{ width: `${pct}%` }} />
                     </div>
+                    {isOpen && (
+                      <div className="mt-2.5 space-y-1.5 border-l-2 border-slate-100 pl-3">
+                        {items.map(t => (
+                          <div key={t.id} className="flex items-center justify-between text-xs text-slate-500">
+                            <span className="truncate pr-2">{t.name}</span>
+                            <span className="shrink-0 font-medium text-slate-600">{fmt(t.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

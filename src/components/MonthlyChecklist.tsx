@@ -159,6 +159,43 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
     setDragX(0);
   };
 
+  // Swipe left/right anywhere in the tabs section to switch between Checklist / Shopping / By Category,
+  // without capturing the pointer so taps, checkboxes, inputs and vertical scrolling underneath still work normally.
+  const tabTouchStart = useRef<{ x: number; y: number } | null>(null);
+  const tabSwipeIntent = useRef<'horizontal' | 'vertical' | null>(null);
+
+  const handleTabPointerDown = (e: ReactPointerEvent) => {
+    tabTouchStart.current = { x: e.clientX, y: e.clientY };
+    tabSwipeIntent.current = null;
+  };
+
+  const handleTabPointerMove = (e: ReactPointerEvent) => {
+    if (!tabTouchStart.current) return;
+    const dx = e.clientX - tabTouchStart.current.x;
+    const dy = e.clientY - tabTouchStart.current.y;
+    if (tabSwipeIntent.current === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+      tabSwipeIntent.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+    }
+  };
+
+  const handleTabPointerEnd = (e: ReactPointerEvent) => {
+    if (!tabTouchStart.current || tabSwipeIntent.current !== 'horizontal') {
+      tabTouchStart.current = null;
+      tabSwipeIntent.current = null;
+      return;
+    }
+    const dx = e.clientX - tabTouchStart.current.x;
+    const order: Array<typeof activeTab> = ['checklist', 'shopping', 'category'];
+    const idx = order.indexOf(activeTab);
+    if (dx < -60 && idx < order.length - 1) {
+      setActiveTab(order[idx + 1]);
+    } else if (dx > 60 && idx > 0) {
+      setActiveTab(order[idx - 1]);
+    }
+    tabTouchStart.current = null;
+    tabSwipeIntent.current = null;
+  };
+
   const knownCategories = useMemo(() => {
     const all = Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
     return all.filter(c => !hiddenCategories.includes(c));
@@ -477,7 +514,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
           <span>Bills <span className="font-semibold text-slate-700">{fmt(billsPaidTotal)}</span></span>
           <span className="text-orange-200">•</span>
-          <span>Shopping <span className="font-semibold text-slate-700">{fmt(shoppingTotal)}</span></span>
+          <span>Spending <span className="font-semibold text-slate-700">{fmt(shoppingTotal)}</span></span>
         </div>
 
         <div className="mt-5 flex items-center gap-6 border-t border-orange-100 pt-4">
@@ -511,6 +548,15 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </div>
       </div>
 
+      {/* View tabs + content: swipe horizontally anywhere here to switch tabs */}
+      <div
+        style={{ touchAction: 'pan-y' }}
+        onPointerDown={handleTabPointerDown}
+        onPointerMove={handleTabPointerMove}
+        onPointerUp={handleTabPointerEnd}
+        onPointerCancel={() => { tabTouchStart.current = null; tabSwipeIntent.current = null; }}
+        className="space-y-5"
+      >
       {/* View tabs */}
       <div className="flex gap-1 rounded-full bg-white/70 p-1 text-sm font-medium">
         <button
@@ -527,7 +573,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
             activeTab === 'shopping' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          Shopping
+          Spending
         </button>
         <button
           onClick={() => setActiveTab('category')}
@@ -769,6 +815,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           )}
         </div>
       )}
+      </div>
 
       {/* Floating add button */}
       {canEdit && activeTab !== 'category' && (

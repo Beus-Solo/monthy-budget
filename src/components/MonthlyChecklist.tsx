@@ -914,14 +914,14 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </button>
       )}
 
-      {/* Add item floating glass sheet */}
+      {/* Add item glass sheet */}
       {canEdit && showAddModal && (
         <div
-          className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center"
           onClick={() => setShowAddModal(false)}
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl"
+            className="w-full max-w-md rounded-t-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl sm:rounded-3xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">

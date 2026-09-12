@@ -712,7 +712,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                         <input
                           defaultValue={t.name}
                           onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
-                          className="w-full border-none bg-transparent p-0 text-sm font-medium text-slate-800 outline-none"
+                          className="w-full border-none bg-transparent p-0 text-base font-medium text-slate-800 outline-none sm:text-sm"
                         />
                       ) : (
                         <p className="truncate text-sm font-medium text-slate-800">{t.name}</p>
@@ -729,7 +729,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                         step="0.01"
                         defaultValue={t.amount}
                         onBlur={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })}
-                        className="w-16 shrink-0 border-none bg-transparent text-right text-sm font-semibold text-slate-800 outline-none"
+                        className="w-16 shrink-0 border-none bg-transparent text-right text-base font-semibold text-slate-800 outline-none sm:text-sm"
                       />
                     ) : (
                       <span className="shrink-0 text-sm font-semibold text-slate-800">{t.amount}</span>
@@ -774,7 +774,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                         <input
                           defaultValue={t.name}
                           onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
-                          className="w-full border-none bg-transparent p-0 text-sm font-medium text-slate-800 outline-none"
+                          className="w-full border-none bg-transparent p-0 text-base font-medium text-slate-800 outline-none sm:text-sm"
                         />
                       ) : (
                         <p className="truncate text-sm font-medium text-slate-800">{t.name}</p>
@@ -793,7 +793,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                         step="0.01"
                         defaultValue={t.amount}
                         onBlur={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })}
-                        className="w-16 shrink-0 border-none bg-transparent text-right text-sm font-semibold text-slate-800 outline-none"
+                        className="w-16 shrink-0 border-none bg-transparent text-right text-base font-semibold text-slate-800 outline-none sm:text-sm"
                       />
                     ) : (
                       <span className="shrink-0 text-sm font-semibold text-slate-800">{t.amount}</span>
@@ -843,7 +843,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                             <input
                               defaultValue={t.name}
                               onBlur={(e) => onUpdate(t.id, { name: e.target.value })}
-                              className="w-full border-none bg-transparent p-0 text-[13px] font-medium text-slate-400 line-through outline-none"
+                              className="w-full border-none bg-transparent p-0 text-base font-medium text-slate-400 line-through outline-none sm:text-[13px]"
                             />
                           ) : (
                             <p className="truncate text-[13px] font-medium text-slate-400 line-through">{t.name}</p>

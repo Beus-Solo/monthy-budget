@@ -69,11 +69,11 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
 
   return (
     <div
-      className="fixed inset-0 z-30 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-30 flex items-end justify-center bg-slate-900/30 sm:items-center"
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl"
+        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">

@@ -178,8 +178,12 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const [dragX, setDragX] = useState(0);
   const dragStartX = useRef(0);
   const dragMoved = useRef(false);
+  // Mirrors isDragging without the one-render lag a pointermove firing before React
+  // commits setIsDragging(true) could otherwise hit, which dropped the drag's first pixels.
+  const isDraggingRef = useRef(false);
 
   const handleCarouselPointerDown = (e: ReactPointerEvent) => {
+    isDraggingRef.current = true;
     setIsDragging(true);
     dragStartX.current = e.clientX;
     dragMoved.current = false;
@@ -187,20 +191,22 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   };
 
   const handleCarouselPointerMove = (e: ReactPointerEvent) => {
-    if (!isDragging) return;
+    if (!isDraggingRef.current) return;
     const delta = e.clientX - dragStartX.current;
     if (Math.abs(delta) > 5) dragMoved.current = true;
     setDragX(delta);
   };
 
   const endCarouselDrag = () => {
-    if (!isDragging) return;
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
     setIsDragging(false);
-    const threshold = MONTH_PILL_W / 2;
-    if (dragX < -threshold) {
-      setActiveMonth(m => Math.min(11, m + 1));
-    } else if (dragX > threshold) {
-      setActiveMonth(m => Math.max(0, m - 1));
+    // Move by however many pill-widths were actually dragged, not always a single month —
+    // dragging several pills' worth used to still only advance one month and then snap back hard.
+    const step = MONTH_PILL_W + MONTH_GAP;
+    const monthDelta = Math.round(-dragX / step);
+    if (monthDelta !== 0) {
+      setActiveMonth(m => Math.min(11, Math.max(0, m + monthDelta)));
     }
     setDragX(0);
   };

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useLayoutEffect, useRef, PointerEvent as 
 import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight, X, Wallet2, ListChecks, Download } from 'lucide-react';
 import { Transaction } from '../types';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
+import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -307,6 +308,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const [selectedExportCategories, setSelectedExportCategories] = useState<string[]>([]);
 
   useLockBodyScroll(showAddModal || showExportModal);
+  const visualViewportHeight = useVisualViewportHeight();
 
   const openExportModal = () => {
     setSelectedExportCategories(categoryTotals.map(([cat]) => cat));
@@ -917,7 +919,8 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       {/* Add item glass sheet */}
       {canEdit && showAddModal && (
         <div
-          className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center"
+          className="fixed inset-x-0 top-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center"
+          style={{ height: visualViewportHeight }}
           onClick={() => setShowAddModal(false)}
         >
           <div

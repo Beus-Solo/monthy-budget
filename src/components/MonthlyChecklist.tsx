@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, PointerEvent as ReactPointerEvent } from 'react';
 import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight, X, Wallet2, ListChecks, Download } from 'lucide-react';
 import { Transaction } from '../types';
+import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -304,6 +305,8 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedExportCategories, setSelectedExportCategories] = useState<string[]>([]);
+
+  useLockBodyScroll(showAddModal || showExportModal);
 
   const openExportModal = () => {
     setSelectedExportCategories(categoryTotals.map(([cat]) => cat));

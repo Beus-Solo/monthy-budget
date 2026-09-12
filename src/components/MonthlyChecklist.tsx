@@ -4,6 +4,9 @@ import { Transaction } from '../types';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+type TabKey = 'checklist' | 'shopping' | 'category';
+const TAB_ORDER: TabKey[] = ['checklist', 'shopping', 'category'];
+
 const CATEGORY_COLORS = [
   { dot: 'bg-emerald-400', bar: 'bg-emerald-400', chip: 'bg-emerald-50 text-emerald-700' },
   { dot: 'bg-indigo-400', bar: 'bg-indigo-400', chip: 'bg-indigo-50 text-indigo-700' },
@@ -120,7 +123,13 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const now = new Date();
   const [activeMonth, setActiveMonth] = useState(now.getMonth());
   const [activeYear, setActiveYear] = useState(now.getFullYear());
-  const [activeTab, setActiveTab] = useState<'checklist' | 'shopping' | 'category'>('checklist');
+  const [activeTab, setActiveTab] = useState<TabKey>('checklist');
+  const [tabDirection, setTabDirection] = useState<'left' | 'right'>('right');
+
+  const changeTab = (next: TabKey) => {
+    setTabDirection(TAB_ORDER.indexOf(next) > TAB_ORDER.indexOf(activeTab) ? 'right' : 'left');
+    setActiveTab(next);
+  };
   const [showAddModal, setShowAddModal] = useState(false);
   const [shopDate, setShopDate] = useState('');
   const [name, setName] = useState('');
@@ -185,12 +194,11 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       return;
     }
     const dx = e.clientX - tabTouchStart.current.x;
-    const order: Array<typeof activeTab> = ['checklist', 'shopping', 'category'];
-    const idx = order.indexOf(activeTab);
-    if (dx < -60 && idx < order.length - 1) {
-      setActiveTab(order[idx + 1]);
+    const idx = TAB_ORDER.indexOf(activeTab);
+    if (dx < -60 && idx < TAB_ORDER.length - 1) {
+      changeTab(TAB_ORDER[idx + 1]);
     } else if (dx > 60 && idx > 0) {
-      setActiveTab(order[idx - 1]);
+      changeTab(TAB_ORDER[idx - 1]);
     }
     tabTouchStart.current = null;
     tabSwipeIntent.current = null;
@@ -560,7 +568,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       {/* View tabs */}
       <div className="flex gap-1 rounded-full bg-white/70 p-1 text-sm font-medium">
         <button
-          onClick={() => setActiveTab('checklist')}
+          onClick={() => changeTab('checklist')}
           className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
             activeTab === 'checklist' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
@@ -568,7 +576,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           Checklist
         </button>
         <button
-          onClick={() => setActiveTab('shopping')}
+          onClick={() => changeTab('shopping')}
           className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
             activeTab === 'shopping' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
@@ -576,7 +584,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           Spending
         </button>
         <button
-          onClick={() => setActiveTab('category')}
+          onClick={() => changeTab('category')}
           className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
             activeTab === 'category' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
@@ -584,6 +592,8 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           By Category
         </button>
       </div>
+
+      <div key={activeTab} className={`overflow-hidden ${tabDirection === 'right' ? 'animate-tab-slide-right' : 'animate-tab-slide-left'}`}>
 
       {activeTab === 'category' ? (
         <div className="rounded-3xl bg-white p-5 shadow-sm">
@@ -815,6 +825,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           )}
         </div>
       )}
+      </div>
       </div>
 
       {/* Floating add button */}

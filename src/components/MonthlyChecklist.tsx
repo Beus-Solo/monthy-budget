@@ -58,7 +58,7 @@ function CategoryPicker({ value, onChange, categories, placeholder, onDeleteCate
         value={value}
         onChange={(e) => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
-        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
@@ -911,16 +911,19 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </button>
       )}
 
-      {/* Add item bottom sheet */}
+      {/* Add item floating glass sheet */}
       {canEdit && showAddModal && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center" onClick={() => setShowAddModal(false)}>
+        <div
+          className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px]"
+          onClick={() => setShowAddModal(false)}
+        >
           <div
-            className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl"
+            className="w-full max-w-md rounded-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
               <h4 className="text-base font-semibold text-slate-900">{activeTab === 'shopping' ? 'Add shopping expense' : 'Add expense'}</h4>
-              <button onClick={() => setShowAddModal(false)} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
+              <button onClick={() => setShowAddModal(false)} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-white/60 hover:text-slate-700">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -930,7 +933,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
               />
               <CategoryPicker
                 value={category}
@@ -948,7 +951,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base outline-none focus:border-slate-400 sm:text-sm"
               />
               {activeTab === 'shopping' ? (
                 <input
@@ -957,7 +960,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                   onChange={(e) => setShopDate(e.target.value)}
                   min={toDateStr(activeYear, activeMonth, 1)}
                   max={toDateStr(activeYear, activeMonth, daysInMonth(activeYear, activeMonth))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base text-slate-700 outline-none focus:border-slate-400 sm:text-sm"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-700 outline-none focus:border-slate-400 sm:text-sm"
                 />
               ) : (
                 <label className="flex items-center gap-2 px-0.5 py-1 text-xs text-slate-600">

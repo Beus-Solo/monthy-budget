@@ -3,6 +3,7 @@ import { X, Trash2, UserPlus, LogOut, Pencil, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usernameToEmail, emailToUsername } from '../lib/username';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
+import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 
 interface Viewer {
   id: string;
@@ -24,6 +25,7 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
   const { user, signOut, secureAccount } = useAuth();
   const isAnonymous = (user as any)?.is_anonymous === true;
   useLockBodyScroll(true);
+  const visualViewportHeight = useVisualViewportHeight();
 
   const [inviteUsername, setInviteUsername] = useState('');
   const [inviteError, setInviteError] = useState<string | null>(null);
@@ -71,7 +73,8 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
 
   return (
     <div
-      className="fixed inset-0 z-30 flex items-end justify-center bg-slate-900/30 sm:items-center"
+      className="fixed inset-x-0 top-0 z-30 flex items-end justify-center bg-slate-900/30 sm:items-center"
+      style={{ height: visualViewportHeight }}
       onClick={onClose}
     >
       <div

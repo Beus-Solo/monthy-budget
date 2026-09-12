@@ -12,7 +12,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-orange-50 via-rose-50/40 to-white">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900"></div>
       </div>
     );

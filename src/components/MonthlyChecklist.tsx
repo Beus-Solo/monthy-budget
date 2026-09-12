@@ -510,9 +510,9 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       </div>
 
       {/* Summary card */}
-      <div className="rounded-3xl bg-gradient-to-br from-white to-orange-50 border border-orange-100/60 p-5 shadow-sm">
+      <div className="rounded-3xl bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 text-slate-700">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-100/60">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-white">
             <Wallet2 className="h-4 w-4" />
           </div>
           <span className="text-sm font-medium">{MONTHS[activeMonth]} {activeYear}</span>
@@ -521,16 +521,16 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         <p className="mt-1 text-xs font-medium text-slate-500">PAID SO FAR</p>
         <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
           <span>Bills <span className="font-semibold text-slate-700">{fmt(billsPaidTotal)}</span></span>
-          <span className="text-orange-200">•</span>
+          <span className="text-zinc-300">•</span>
           <span>Spending <span className="font-semibold text-slate-700">{fmt(shoppingTotal)}</span></span>
         </div>
 
-        <div className="mt-5 flex items-center gap-6 border-t border-orange-100 pt-4">
+        <div className="mt-5 flex items-center gap-6 border-t border-zinc-100 pt-4">
           <div>
             <p className="text-xs text-slate-500">Unpaid</p>
             <p className="text-sm font-semibold text-slate-800">{fmt(unpaidTotal)}</p>
           </div>
-          <div className="h-8 w-px bg-orange-100" />
+          <div className="h-8 w-px bg-zinc-200" />
           <div>
             <p className="text-xs text-slate-500">To be paid</p>
             <p className="text-sm font-semibold text-slate-800">{billTransactions.length}</p>
@@ -540,16 +540,16 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-gradient-to-br from-white to-orange-50 border border-orange-100/60 p-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100/60">
-            <ListChecks className="h-4 w-4 text-slate-700" />
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900">
+            <ListChecks className="h-4 w-4 text-white" />
           </div>
           <p className="mt-3 text-xl font-bold text-slate-900">{unpaidCount}</p>
           <p className="text-xs text-slate-500">Unpaid item{unpaidCount !== 1 ? 's' : ''}</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-white to-orange-50 border border-orange-100/60 p-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100/60">
-            <Repeat className="h-4 w-4 text-slate-700" />
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900">
+            <Repeat className="h-4 w-4 text-white" />
           </div>
           <p className="mt-3 text-xl font-bold text-slate-900">{recurringCount}</p>
           <p className="text-xs text-slate-500">Recurring</p>
@@ -651,7 +651,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
               No shopping expenses logged yet this month. Tap + to add one.
             </div>
           ) : (
-            <div className="divide-y divide-orange-100/60 overflow-hidden rounded-3xl border border-orange-100/50 bg-white shadow-sm">
+            <div className="divide-y divide-zinc-100 overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
               {shoppingTransactions.map(t => {
                 const c = colorFor(t.category);
                 return (
@@ -775,7 +775,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
               })}
 
               {checkedItems.length > 0 && (
-                <div className="divide-y divide-orange-100/60 overflow-hidden rounded-2xl border border-orange-100/50 bg-gradient-to-br from-white to-orange-50/80">
+                <div className="divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50">
                   {checkedItems.map(t => {
                     const c = colorFor(t.category);
                     return (

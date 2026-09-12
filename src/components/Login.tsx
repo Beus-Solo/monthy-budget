@@ -60,8 +60,8 @@ export default function Login() {
   useEffect(() => {
     const prevBody = document.body.style.background;
     const prevHtml = document.documentElement.style.background;
-    document.body.style.background = '#f0fdfa';
-    document.documentElement.style.background = '#f0fdfa';
+    document.body.style.background = '#fafafa';
+    document.documentElement.style.background = '#fafafa';
     return () => {
       document.body.style.background = prevBody;
       document.documentElement.style.background = prevHtml;
@@ -88,7 +88,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-teal-50 px-6 py-8">
+    <div className="min-h-screen bg-zinc-50 px-6 py-8">
       <div className="mx-auto max-w-sm">
         <div className="mt-6 mb-4">
           <WalletDoodle />
@@ -110,7 +110,7 @@ export default function Login() {
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full rounded-full border border-slate-300 bg-white px-5 py-3.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-teal-700"
+            className="w-full rounded-full border border-slate-300 bg-white px-5 py-3.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-zinc-900"
           />
 
           <div>
@@ -126,7 +126,7 @@ export default function Login() {
                   onChange={(e) => setDigit(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   onPaste={handlePaste}
-                  className="h-14 w-full rounded-2xl border border-slate-300 bg-white text-center text-lg text-slate-900 outline-none focus:border-teal-700"
+                  className="h-14 w-full rounded-2xl border border-slate-300 bg-white text-center text-lg text-slate-900 outline-none focus:border-zinc-900"
                 />
               ))}
             </div>
@@ -138,7 +138,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-full bg-teal-800 py-3.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60"
+            className="w-full rounded-full bg-zinc-900 py-3.5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"
           >
             {submitting ? 'Please wait…' : 'Next'}
           </button>
@@ -146,9 +146,9 @@ export default function Login() {
 
         <p className="mt-8 text-center text-sm text-slate-500">
           {mode === 'signin' ? (
-            <>New here? <button onClick={toggleMode} className="font-medium text-teal-800">Create an account.</button></>
+            <>New here? <button onClick={toggleMode} className="font-semibold text-zinc-900">Create an account.</button></>
           ) : (
-            <>Already have an account? <button onClick={toggleMode} className="font-medium text-teal-800">Sign in.</button></>
+            <>Already have an account? <button onClick={toggleMode} className="font-semibold text-zinc-900">Sign in.</button></>
           )}
         </p>
       </div>

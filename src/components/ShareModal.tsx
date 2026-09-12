@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { X, Trash2, UserPlus, LogOut, Pencil, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usernameToEmail, emailToUsername } from '../lib/username';
+import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 
 interface Viewer {
   id: string;
@@ -22,6 +23,7 @@ interface Props {
 export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, revokeViewer, viewMode, onChangeViewMode }: Props) {
   const { user, signOut, secureAccount } = useAuth();
   const isAnonymous = (user as any)?.is_anonymous === true;
+  useLockBodyScroll(true);
 
   const [inviteUsername, setInviteUsername] = useState('');
   const [inviteError, setInviteError] = useState<string | null>(null);

@@ -5,3 +5,20 @@
     @apply bg-orange-50 text-slate-900 antialiased selection:bg-indigo-100;
   }
 }
+
+@layer utilities {
+  @keyframes tab-slide-from-right {
+    from { transform: translateX(28px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes tab-slide-from-left {
+    from { transform: translateX(-28px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-tab-slide-right {
+    animation: tab-slide-from-right 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .animate-tab-slide-left {
+    animation: tab-slide-from-left 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}

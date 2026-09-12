@@ -556,7 +556,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       </div>
 
       {/* Summary card */}
-      <div className="rounded-3xl bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-white/70 bg-white/60 p-5 shadow-[0_2px_16px_rgba(15,23,42,0.07)] backdrop-blur-xl">
         <div className="flex items-center gap-2 text-slate-700">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-white">
             <Wallet2 className="h-4 w-4" />
@@ -586,14 +586,14 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-white/70 bg-white/60 p-4 shadow-[0_2px_16px_rgba(15,23,42,0.07)] backdrop-blur-xl">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900">
             <ListChecks className="h-4 w-4 text-white" />
           </div>
           <p className="mt-3 text-xl font-bold text-slate-900">{unpaidCount}</p>
           <p className="text-xs text-slate-500">Unpaid item{unpaidCount !== 1 ? 's' : ''}</p>
         </div>
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-white/70 bg-white/60 p-4 shadow-[0_2px_16px_rgba(15,23,42,0.07)] backdrop-blur-xl">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900">
             <Repeat className="h-4 w-4 text-white" />
           </div>

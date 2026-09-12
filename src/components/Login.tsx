@@ -19,6 +19,57 @@ function WalletDoodle() {
   );
 }
 
+// Ambient bubbles rise from the doodle and a tap sends out a ripple — same idea as a splash-screen
+// hero animation, kept entirely in the app's existing black/white/zinc palette (no new colors).
+const LOGO_BUBBLES = [
+  { size: 7, left: '30%', delay: '0s', duration: '4.4s', x: '-16px', o: 0.5, tone: 'bg-slate-900' },
+  { size: 5, left: '68%', delay: '0.7s', duration: '3.8s', x: '14px', o: 0.35, tone: 'bg-slate-400' },
+  { size: 9, left: '48%', delay: '1.4s', duration: '5s', x: '4px', o: 0.4, tone: 'bg-slate-300' },
+  { size: 6, left: '58%', delay: '2.1s', duration: '4.2s', x: '20px', o: 0.5, tone: 'bg-slate-900' },
+  { size: 5, left: '38%', delay: '2.8s', duration: '4.6s', x: '-8px', o: 0.35, tone: 'bg-slate-400' },
+];
+
+function AnimatedLogo() {
+  const [taps, setTaps] = useState<number[]>([]);
+
+  const handleTap = () => {
+    const id = Date.now();
+    setTaps(prev => [...prev, id]);
+    setTimeout(() => setTaps(prev => prev.filter(t => t !== id)), 650);
+  };
+
+  return (
+    <div
+      onPointerDown={handleTap}
+      className="relative mx-auto flex h-36 w-full cursor-pointer items-center justify-center"
+    >
+      {LOGO_BUBBLES.map((b, i) => (
+        <span
+          key={i}
+          className={`absolute top-1/2 rounded-full ${b.tone} animate-bubble-rise`}
+          style={{
+            width: b.size,
+            height: b.size,
+            left: b.left,
+            animationDelay: b.delay,
+            animationDuration: b.duration,
+            filter: 'blur(0.5px)',
+            ['--bubble-x' as string]: b.x,
+            ['--bubble-o' as string]: b.o,
+          }}
+        />
+      ))}
+      <WalletDoodle />
+      {taps.map(id => (
+        <span
+          key={id}
+          className="pointer-events-none absolute h-24 w-24 rounded-full border-2 border-slate-900 animate-logo-tap"
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function Login() {
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -91,7 +142,7 @@ export default function Login() {
     <div className="min-h-screen bg-zinc-50 px-6 py-8">
       <div className="mx-auto max-w-sm">
         <div className="mt-6 mb-4">
-          <WalletDoodle />
+          <AnimatedLogo />
         </div>
 
         <h1 className="text-center text-2xl font-extrabold tracking-wide text-slate-900">

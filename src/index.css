@@ -2,7 +2,7 @@
 
 @layer base {
   html, body {
-    @apply bg-orange-50 text-slate-900 antialiased selection:bg-indigo-100;
+    @apply bg-zinc-100 text-slate-900 antialiased selection:bg-zinc-200;
   }
 }
 

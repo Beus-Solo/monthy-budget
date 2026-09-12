@@ -920,11 +920,11 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
       {canEdit && showAddModal && (
         <div
           className="fixed inset-x-0 top-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center"
-          style={{ height: visualViewportHeight }}
+          style={{ height: visualViewportHeight ?? '100dvh' }}
           onClick={() => setShowAddModal(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl sm:rounded-3xl"
+            className="max-h-full w-full max-w-md overflow-y-auto rounded-t-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl sm:rounded-3xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">

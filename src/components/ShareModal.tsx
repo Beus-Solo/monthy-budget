@@ -92,7 +92,7 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
                 placeholder="Username"
                 value={secureUsername}
                 onChange={(e) => setSecureUsername(e.target.value)}
-                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400"
+                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-base outline-none focus:border-amber-400 sm:text-sm"
               />
               <input
                 type="password"
@@ -102,7 +102,7 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
                 placeholder="Choose a PIN (6+ digits)"
                 value={securePin}
                 onChange={(e) => setSecurePin(e.target.value)}
-                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400"
+                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-base outline-none focus:border-amber-400 sm:text-sm"
               />
               {secureError && <p className="text-xs text-red-600">{secureError}</p>}
               {secureInfo && <p className="text-xs text-emerald-600">{secureInfo}</p>}
@@ -129,7 +129,7 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
                 placeholder="Their username"
                 value={inviteUsername}
                 onChange={(e) => setInviteUsername(e.target.value)}
-                className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-base outline-none focus:border-slate-400 sm:text-sm"
               />
               <button
                 onClick={handleInvite}

@@ -60,7 +60,7 @@ function CategoryPicker({ value, onChange, categories, placeholder, onDeleteCate
         value={value}
         onChange={(e) => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
-        className="w-full rounded-xl border border-white/40 bg-white/25 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-lg focus:border-slate-400 sm:text-sm"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-400 sm:text-sm"
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
@@ -916,7 +916,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </button>
       )}
 
-      {/* Add item glass sheet */}
+      {/* Add item bottom sheet */}
       {canEdit && showAddModal && (
         <div
           className="fixed inset-x-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center"
@@ -924,12 +924,12 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           onClick={() => setShowAddModal(false)}
         >
           <div
-            className="max-h-full w-full max-w-md overflow-y-auto rounded-t-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl sm:rounded-3xl"
+            className="max-h-full w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
               <h4 className="text-base font-semibold text-slate-900">{activeTab === 'shopping' ? 'Add shopping expense' : 'Add expense'}</h4>
-              <button onClick={() => setShowAddModal(false)} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-white/60 hover:text-slate-700">
+              <button onClick={() => setShowAddModal(false)} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -939,7 +939,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
-                className="w-full rounded-xl border border-white/40 bg-white/25 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-lg focus:border-slate-400 sm:text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-400 sm:text-sm"
               />
               <CategoryPicker
                 value={category}
@@ -957,10 +957,10 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-xl border border-white/40 bg-white/25 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-lg focus:border-slate-400 sm:text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-900 outline-none focus:border-slate-400 sm:text-sm"
               />
               {activeTab === 'shopping' ? (
-                <div className="w-full overflow-hidden rounded-xl border border-white/40 bg-white/25 backdrop-blur-lg focus-within:border-slate-400">
+                <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-slate-400">
                   <input
                     type="date"
                     value={shopDate}

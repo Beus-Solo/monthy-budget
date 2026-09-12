@@ -126,10 +126,32 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
   const [activeTab, setActiveTab] = useState<TabKey>('checklist');
   const [tabDirection, setTabDirection] = useState<'left' | 'right'>('right');
 
+  // Animate the content wrapper's height across a tab switch instead of snapping instantly:
+  // an abrupt height change (e.g. a long "By Category" list -> a short empty state) can otherwise
+  // make mobile Safari's chrome (address bar) jump, which looks like a brief zoom/flick.
+  const tabContentRef = useRef<HTMLDivElement>(null);
+  const [tabContentHeight, setTabContentHeight] = useState<number | undefined>(undefined);
+  const heightResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const changeTab = (next: TabKey) => {
+    if (next === activeTab) return;
+    if (tabContentRef.current) {
+      setTabContentHeight(tabContentRef.current.scrollHeight);
+    }
     setTabDirection(TAB_ORDER.indexOf(next) > TAB_ORDER.indexOf(activeTab) ? 'right' : 'left');
     setActiveTab(next);
   };
+
+  useEffect(() => {
+    if (tabContentRef.current) {
+      setTabContentHeight(tabContentRef.current.scrollHeight);
+    }
+    if (heightResetTimer.current) clearTimeout(heightResetTimer.current);
+    heightResetTimer.current = setTimeout(() => setTabContentHeight(undefined), 320);
+    return () => {
+      if (heightResetTimer.current) clearTimeout(heightResetTimer.current);
+    };
+  }, [activeTab]);
 
   // Sliding pill indicator behind the active tab label, morphing position/width to match it.
   const tabButtonRefs = useRef<Partial<Record<TabKey, HTMLButtonElement>>>({});
@@ -616,7 +638,11 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         </button>
       </div>
 
-      <div key={activeTab} className={`overflow-hidden ${tabDirection === 'right' ? 'animate-tab-slide-right' : 'animate-tab-slide-left'}`}>
+      <div
+        className="overflow-hidden transition-[height] duration-300 ease-out"
+        style={{ height: tabContentHeight }}
+      >
+      <div key={activeTab} ref={tabContentRef} className={tabDirection === 'right' ? 'animate-tab-slide-right' : 'animate-tab-slide-left'}>
 
       {activeTab === 'category' ? (
         <div className="rounded-3xl bg-white p-5 shadow-sm">
@@ -848,6 +874,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
           )}
         </div>
       )}
+      </div>
       </div>
       </div>
 

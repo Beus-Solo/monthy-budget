@@ -58,7 +58,7 @@ function CategoryPicker({ value, onChange, categories, placeholder, onDeleteCate
         value={value}
         onChange={(e) => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
-        className="w-full rounded-xl border border-slate-200 bg-white/55 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-md focus:border-slate-400 sm:text-sm"
+        className="w-full rounded-xl border border-white/40 bg-white/25 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-lg focus:border-slate-400 sm:text-sm"
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
@@ -933,7 +933,7 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
-                className="w-full rounded-xl border border-slate-200 bg-white/55 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-md focus:border-slate-400 sm:text-sm"
+                className="w-full rounded-xl border border-white/40 bg-white/25 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-lg focus:border-slate-400 sm:text-sm"
               />
               <CategoryPicker
                 value={category}
@@ -951,10 +951,10 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white/55 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-md focus:border-slate-400 sm:text-sm"
+                className="w-full rounded-xl border border-white/40 bg-white/25 px-3 py-2.5 text-base text-slate-900 outline-none backdrop-blur-lg focus:border-slate-400 sm:text-sm"
               />
               {activeTab === 'shopping' ? (
-                <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white/55 backdrop-blur-md focus-within:border-slate-400">
+                <div className="w-full overflow-hidden rounded-xl border border-white/40 bg-white/25 backdrop-blur-lg focus-within:border-slate-400">
                   <input
                     type="date"
                     value={shopDate}

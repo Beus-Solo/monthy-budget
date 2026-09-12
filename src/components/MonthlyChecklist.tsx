@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, PointerEvent as ReactPointerEvent } from 'react';
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, PointerEvent as ReactPointerEvent } from 'react';
 import { Trash2, Plus, Check, Repeat, ChevronLeft, ChevronRight, X, Wallet2, ListChecks, Download } from 'lucide-react';
 import { Transaction } from '../types';
 
@@ -130,6 +130,21 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
     setTabDirection(TAB_ORDER.indexOf(next) > TAB_ORDER.indexOf(activeTab) ? 'right' : 'left');
     setActiveTab(next);
   };
+
+  // Sliding pill indicator behind the active tab label, morphing position/width to match it.
+  const tabButtonRefs = useRef<Partial<Record<TabKey, HTMLButtonElement>>>({});
+  const [tabIndicator, setTabIndicator] = useState({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = tabButtonRefs.current[activeTab];
+      if (el) setTabIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [activeTab]);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [shopDate, setShopDate] = useState('');
   const [name, setName] = useState('');
@@ -566,27 +581,35 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
         className="space-y-5"
       >
       {/* View tabs */}
-      <div className="flex gap-1 rounded-full bg-white/70 p-1 text-sm font-medium">
+      <div className="relative flex gap-1 rounded-full bg-white/70 p-1 text-sm font-medium">
+        <div
+          aria-hidden
+          className="absolute inset-y-1 rounded-full bg-slate-900 shadow-sm transition-[transform,width] duration-300 ease-out"
+          style={{ width: tabIndicator.width, transform: `translateX(${tabIndicator.left}px)` }}
+        />
         <button
+          ref={(el) => { tabButtonRefs.current.checklist = el ?? undefined; }}
           onClick={() => changeTab('checklist')}
-          className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
-            activeTab === 'checklist' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`relative z-10 flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors duration-300 ${
+            activeTab === 'checklist' ? 'text-white' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           Checklist
         </button>
         <button
+          ref={(el) => { tabButtonRefs.current.shopping = el ?? undefined; }}
           onClick={() => changeTab('shopping')}
-          className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
-            activeTab === 'shopping' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`relative z-10 flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors duration-300 ${
+            activeTab === 'shopping' ? 'text-white' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           Spending
         </button>
         <button
+          ref={(el) => { tabButtonRefs.current.category = el ?? undefined; }}
           onClick={() => changeTab('category')}
-          className={`flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors ${
-            activeTab === 'category' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`relative z-10 flex-1 whitespace-nowrap rounded-full py-1.5 transition-colors duration-300 ${
+            activeTab === 'category' ? 'text-white' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           By Category

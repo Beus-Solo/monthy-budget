@@ -72,15 +72,16 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
   };
 
   return (
-    <div
-      className="fixed inset-x-0 z-30 flex items-end justify-center bg-slate-900/30 sm:items-center"
-      style={{ top: visualViewportTop, height: visualViewportHeight ?? '100dvh' }}
-      onClick={onClose}
-    >
+    <>
+      {/* Dim backdrop: always the full layout viewport, independent of the keyboard-aware
+          positioning below, so a transient mismatch between visualViewport height/top while
+          the keyboard animates can never leave a gap of undimmed page showing through. */}
+      <div className="fixed inset-0 z-30 bg-slate-900/30" onClick={onClose} />
       <div
-        className="max-h-full w-full max-w-md overflow-y-auto rounded-t-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl sm:rounded-3xl"
-        onClick={(e) => e.stopPropagation()}
+        className="pointer-events-none fixed inset-x-0 z-30 flex items-end justify-center sm:items-center"
+        style={{ top: visualViewportTop, height: visualViewportHeight ?? '100dvh' }}
       >
+        <div className="pointer-events-auto max-h-full w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl border border-white/60 bg-white/75 p-5 shadow-2xl backdrop-blur-2xl sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <h4 className="text-base font-semibold text-slate-900">Account</h4>
           <button onClick={onClose} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-white/60 hover:text-slate-700">
@@ -216,7 +217,8 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
         >
           <LogOut className="h-3.5 w-3.5" /> Sign out
         </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

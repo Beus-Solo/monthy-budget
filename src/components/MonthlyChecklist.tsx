@@ -918,15 +918,18 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
 
       {/* Add item bottom sheet */}
       {canEdit && showAddModal && (
-        <div
-          className="fixed inset-x-0 z-20 flex items-end justify-center bg-slate-900/30 sm:items-center"
-          style={{ top: visualViewportTop, height: visualViewportHeight ?? '100dvh' }}
-          onClick={() => setShowAddModal(false)}
-        >
+        <>
+          {/* Dim backdrop: always the full layout viewport, independent of the keyboard-aware
+              positioning below, so a transient mismatch between visualViewport height/top while
+              the keyboard animates can never leave a gap of undimmed page showing through. */}
+          <div className="fixed inset-0 z-20 bg-slate-900/30" onClick={() => setShowAddModal(false)} />
           <div
-            className="max-h-full w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl"
-            onClick={(e) => e.stopPropagation()}
+            className="pointer-events-none fixed inset-x-0 z-20 flex items-end justify-center sm:items-center"
+            style={{ top: visualViewportTop, height: visualViewportHeight ?? '100dvh' }}
           >
+            <div
+              className="pointer-events-auto max-h-full w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-5 shadow-xl sm:rounded-3xl"
+            >
             <div className="mb-4 flex items-center justify-between">
               <h4 className="text-base font-semibold text-slate-900">{activeTab === 'shopping' ? 'Add shopping expense' : 'Add expense'}</h4>
               <button onClick={() => setShowAddModal(false)} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
@@ -988,8 +991,9 @@ export default function MonthlyChecklist({ transactions, onAdd, onDelete, onTogg
                 <Plus className="h-3.5 w-3.5" /> {activeTab === 'shopping' ? 'Log expense' : 'Add to list'}
               </button>
             </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Export report bottom sheet */}

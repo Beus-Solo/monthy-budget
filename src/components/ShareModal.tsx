@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { X, Trash2, UserPlus, LogOut } from 'lucide-react';
+import { X, Trash2, UserPlus, LogOut, Pencil, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usernameToEmail, emailToUsername } from '../lib/username';
 
@@ -15,9 +15,11 @@ interface Props {
   viewers: Viewer[];
   inviteViewer: (email: string) => Promise<string | null>;
   revokeViewer: (id: string) => Promise<void>;
+  viewMode: boolean;
+  onChangeViewMode: (viewMode: boolean) => void;
 }
 
-export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, revokeViewer }: Props) {
+export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, revokeViewer, viewMode, onChangeViewMode }: Props) {
   const { user, signOut, secureAccount } = useAuth();
   const isAnonymous = (user as any)?.is_anonymous === true;
 
@@ -78,6 +80,35 @@ export default function ShareModal({ onClose, canEdit, viewers, inviteViewer, re
         <p className="mb-4 truncate text-xs text-slate-500">
           Signed in as {user?.email ? emailToUsername(user.email) : 'anonymous session'}
         </p>
+
+        {canEdit && (
+          <div className="mb-5">
+            <p className="mb-2 text-sm font-medium text-slate-800">Mode</p>
+            <p className="mb-3 text-xs text-slate-500">
+              Switch to View mode to browse this device without accidentally adding, editing, or deleting anything.
+            </p>
+            <div className="flex gap-1 rounded-full bg-slate-100 p-1 text-sm font-medium">
+              <button
+                type="button"
+                onClick={() => onChangeViewMode(false)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-1.5 transition-colors ${
+                  !viewMode ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit mode
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeViewMode(true)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-1.5 transition-colors ${
+                  viewMode ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Eye className="h-3.5 w-3.5" /> View mode
+              </button>
+            </div>
+          </div>
+        )}
 
         {isAnonymous && (
           <div className="mb-5 rounded-2xl bg-amber-50 p-4">

@@ -1,10 +1,11 @@
-import { Wallet, Settings } from 'lucide-react';
+import { Wallet, Settings, Eye } from 'lucide-react';
 
 interface Props {
   onOpenSettings: () => void;
+  viewMode?: boolean;
 }
 
-export default function Header({ onOpenSettings }: Props) {
+export default function Header({ onOpenSettings, viewMode }: Props) {
   return (
     <header className="px-4 pt-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-3xl items-center justify-between">
@@ -13,6 +14,11 @@ export default function Header({ onOpenSettings }: Props) {
             <Wallet className="h-4.5 w-4.5" />
           </div>
           <span className="text-lg font-semibold tracking-tight text-slate-900">TRAKMTRX</span>
+          {viewMode && (
+            <span className="flex items-center gap-1 rounded-full bg-slate-900/5 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+              <Eye className="h-3 w-3" /> View mode
+            </span>
+          )}
         </div>
         <button
           onClick={onOpenSettings}
